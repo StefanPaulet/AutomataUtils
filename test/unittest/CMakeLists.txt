@@ -13,5 +13,10 @@ if(NOT googletest_POPULATED)
             PRIVATE ${googletest_SOURCE_DIR}/googletest)
 endif()
 
-add_executable(unittests unitTest.cpp)
+add_executable(unittests unitTest.cpp
+    AlphabetTest.cpp
+    OperatorTest.cpp
+    RegexTest.cpp
+    PrinterTest.cpp)
 target_link_libraries(unittests lib.gtest)
+target_include_directories(unittests PRIVATE ../../source)

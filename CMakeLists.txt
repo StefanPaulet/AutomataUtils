@@ -11,7 +11,10 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_SPECIFIC_COVERAGE_FLAGS}")
 
-add_executable(main source/target/main.cpp)
+add_executable(main source/target/main.cpp
+        source/regex/Regex.cpp
+        source/alphabet/Alphabet.cpp
+        source/operator/Operator.hpp)
 target_include_directories(main PUBLIC source)
 
 add_subdirectory(test/unittest)
