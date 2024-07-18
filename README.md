@@ -1,8 +1,8 @@
 # AutomataUtils
 
-- [ ] Regex
-  - [ ] Regex parsing
-  - [ ] Building Regex syntax tree
+- [x] Regex
+  - [x] Regex parsing
+  - [x] Building Regex syntax tree
 - [ ] Automata
   - [ ] NFA representation
   - [ ] DFA representation
