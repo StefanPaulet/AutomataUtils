@@ -44,3 +44,11 @@ TEST(AlphabetTest, Join) {
 
   ASSERT_EQ(a3.symbols(), "0123abcxyz");
 }
+
+TEST(AlphabetTest, Exception) {
+  try {
+    Alphabet a {'5', '1'};
+  } catch (exceptions::AlphabetRangeException const& e) {
+    ASSERT_EQ(e.what(), "Attempting to create alphabet with range where begin beyond end");
+  }
+}

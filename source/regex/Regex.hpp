@@ -19,6 +19,7 @@ public:
 
   [[nodiscard]] auto parse() const noexcept(false) -> RegexSyntaxTree;
   [[nodiscard]] auto string() const -> std::string_view { return _str; }
+  [[nodiscard]] auto const& operators() const { return _operators; }
 
 private:
   auto __parse(char currChar, std::stack<RegexSyntaxTree>& symbolStack, std::stack<Operator>& operatorStack) const

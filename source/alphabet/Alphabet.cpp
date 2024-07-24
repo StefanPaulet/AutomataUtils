@@ -11,10 +11,11 @@ namespace au {
 Alphabet::Alphabet(std::string&& symbols) : _symbols {std::move(symbols)} { std::ranges::sort(_symbols); }
 
 
-Alphabet::Alphabet(char begin, char end) noexcept(false) : _symbols (end - begin + 1, begin) {
+Alphabet::Alphabet(char begin, char end) noexcept(false) {
   if (end - begin < 0) {
     throw exceptions::AlphabetRangeException {};
   }
+  _symbols = std::string(end - begin + 1, begin);
   std::iota(_symbols.begin(), _symbols.end(), begin);
 }
 

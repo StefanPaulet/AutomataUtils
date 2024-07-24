@@ -4,13 +4,14 @@
 
 #pragma once
 
-#include "RegexTreePrinter.hpp"
 #include "alphabet/Alphabet.hpp"
 #include "operator/Operator.hpp"
 #include <cstring>
 #include <format>
 #include <iostream>
+#include <list>
 #include <memory>
+#include <utils/Printer.hpp>
 
 namespace au {
 
@@ -21,8 +22,8 @@ struct RegexSyntaxTreeNode {
   explicit RegexSyntaxTreeNode(char character) : _character {character} {}
   RegexSyntaxTreeNode(char character, std::unique_ptr<RegexSyntaxTreeNode>&& left,
                       std::unique_ptr<RegexSyntaxTreeNode>&& right) :
-      _character {character},
-      _pLeft {std::move(left)}, _pRight {std::move(right)} {}
+      _pLeft {std::move(left)},
+      _pRight {std::move(right)}, _character {character} {}
 
   std::unique_ptr<RegexSyntaxTreeNode> _pLeft {nullptr};
   std::unique_ptr<RegexSyntaxTreeNode> _pRight {nullptr};
@@ -100,25 +101,72 @@ template <> struct TreeNodeChildren<RegexSyntaxTreeNode> {
   }
 };
 
-template <> struct DotNodePrinter<RegexSyntaxTreeNode> {
-  auto id(RegexSyntaxTreeNode const* n) {
-    if (auto const it = ids.find(n); it != ids.end()) {
-      return it->second;
+template <> struct GraphNodeChildren<RegexSyntaxTreeNode> {
+  auto operator()(RegexSyntaxTreeNode const* node) const -> std::vector<RegexSyntaxTreeNode const*> {
+    if (node->isLeaf()) {
+      return {};
     }
-    return ids.emplace(n, idInc++).first->second;
-  }
+    if (node->_pRight == nullptr) {
+      return {node->_pLeft.get()};
+    }
 
+    return {node->_pLeft.get(), node->_pRight.get()};
+  }
+};
+
+template <> struct DotNodePrinter<RegexSyntaxTreeNode> {
   auto label(RegexSyntaxTreeNode const* n) const { return std::string(1, n->_character); }
 
-  auto borderColour(RegexSyntaxTreeNode const* n) const {
+  auto colour(RegexSyntaxTreeNode const* n) const {
     if (!n->isLeaf()) {
       return "blue";
     }
     return "black";
   }
+};
 
-  std::unordered_map<RegexSyntaxTreeNode const*, unsigned> ids;
-  unsigned idInc = 0;
+class RegexSyntaxTreeTraversal {
+public:
+  enum class Order { PREORDER, INORDER, POSTORDER };
+
+  [[nodiscard]] auto begin() const { return _nodes.begin(); };
+  [[nodiscard]] auto end() const { return _nodes.end(); };
+
+  RegexSyntaxTreeTraversal(Order order, RegexSyntaxTreeNode* node) {
+    if (node == nullptr) {
+      return;
+    }
+
+    auto traverse = [this, order](RegexSyntaxTreeNode* node) {
+      auto&& nodes = RegexSyntaxTreeTraversal {order, std::move(node)};
+      _nodes.insert(_nodes.end(), nodes.begin(), nodes.end());
+    };
+
+    switch (order) {
+      using enum Order;
+      case PREORDER: {
+        _nodes.push_back(node);
+        traverse(node->_pLeft.get());
+        traverse(node->_pRight.get());
+        break;
+      }
+      case INORDER: {
+        traverse(node->_pLeft.get());
+        _nodes.push_back(node);
+        traverse(node->_pRight.get());
+        break;
+      }
+      case POSTORDER: {
+        traverse(node->_pLeft.get());
+        traverse(node->_pRight.get());
+        _nodes.push_back(node);
+        break;
+      }
+    }
+  }
+
+private:
+  std::list<RegexSyntaxTreeNode*> _nodes {};
 };
 
 } // namespace au

@@ -17,6 +17,8 @@ add_executable(unittests unitTest.cpp
     AlphabetTest.cpp
     OperatorTest.cpp
     RegexTest.cpp
-    PrinterTest.cpp)
+    PrinterTest.cpp
+    NfaTest.cpp
+    StateTest.cpp)
 target_link_libraries(unittests lib.gtest)
 target_include_directories(unittests PRIVATE ../../source)
