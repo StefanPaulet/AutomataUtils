@@ -4,14 +4,10 @@
 
 #pragma once
 
-#include "alphabet/Alphabet.hpp"
-#include "operator/Operator.hpp"
-#include <cstring>
 #include <format>
 #include <iostream>
-#include <list>
-#include <memory>
 #include <utils/Printer.hpp>
+#include <vector>
 
 namespace au {
 
@@ -166,7 +162,7 @@ public:
   }
 
 private:
-  std::list<RegexSyntaxTreeNode*> _nodes {};
+  std::vector<RegexSyntaxTreeNode*> _nodes {};
 };
 
 } // namespace au

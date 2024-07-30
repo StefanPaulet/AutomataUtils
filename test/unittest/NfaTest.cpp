@@ -45,13 +45,13 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
     if (s1->transitions().size() != s2->transitions().size()) {
       return false;
     }
-    for (auto const& [chr, states1] : s1->transitions()) {
-      if (!s2->transitions().contains(chr) || s1->next(chr).size() != s2->next(chr).size()) {
+    for (auto const& [sym, states1] : s1->transitions()) {
+      if (!s2->transitions().contains(sym) || s1->next(sym).size() != s2->next(sym).size()) {
         return false;
       }
       for (auto& next1 : states1) {
         bool foundEquivalent = false;
-        for (auto& next2 : s2->next(chr)) {
+        for (auto& next2 : s2->next(sym)) {
           if (equivalent(next1, next2)) {
             foundEquivalent = true;
             break;
@@ -98,4 +98,18 @@ TEST(NfaTest, Comparison) {
   });
 
   ASSERT_TRUE(compare(nfa, target));
+}
+
+TEST(NfaTest, Simulation) {
+  auto regex = Regex("(a|b)*abb");
+  auto nfa = NfaAutomata {regex};
+
+  auto acceptedString = "aabbaabb";
+  auto rejectedString = "cdab";
+  auto minimallyAcceptedStirng = "abb";
+  auto partiallyMatchedString = "abbb";
+  ASSERT_TRUE(std::get<0>(nfa.simulate(acceptedString)));
+  ASSERT_FALSE(std::get<0>(nfa.simulate(rejectedString)));
+  ASSERT_TRUE(std::get<0>(nfa.simulate(minimallyAcceptedStirng)));
+  ASSERT_FALSE(std::get<0>(nfa.simulate(partiallyMatchedString)));
 }

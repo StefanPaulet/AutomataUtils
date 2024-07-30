@@ -7,10 +7,13 @@
 #include <automata/Automata.hpp>
 #include <automata/state/State.hpp>
 #include <cassert>
+#include <set>
 
 namespace au {
 class NfaAutomata : public Automata<NfaAutomata, NfaState> {
 private:
+  using Base = Automata<NfaAutomata, NfaState>;
+
   static auto character(char c) -> NfaAutomata {
     NfaAutomata res {};
     res._start->addTransition(c, res._accepting);
@@ -21,9 +24,9 @@ private:
     NfaAutomata res;
     res._start = lhs._start;
     res._accepting = lhs._accepting;
-    for (auto const& [chr, states] : rhs._start->transitions()) {
+    for (auto const& [sym, states] : rhs._start->transitions()) {
       for (auto const& state : states) {
-        res._accepting->addTransition(chr, state);
+        res._accepting->addTransition(sym, state);
       }
     }
     res._accepting = rhs._accepting;
@@ -39,7 +42,7 @@ private:
     return res;
   }
 
-  static auto closure(NfaAutomata const& automata) -> NfaAutomata {
+  static auto kleeneClosure(NfaAutomata const& automata) -> NfaAutomata {
     NfaAutomata res;
     res._start->addTransition(std::nullopt, automata._start);
     res._start->addTransition(std::nullopt, res._accepting);
@@ -48,8 +51,49 @@ private:
     return res;
   }
 
+  template <typename Range> auto next(Range&& states, std::optional<char> symbol) const {
+    std::set<NfaState const*> nextStates {};
+    for (auto&& state : std::forward<Range>(states)) {
+      for (auto const& nextState : state->next(symbol)) {
+        nextStates.insert(nextState.get());
+      }
+    }
+    return nextStates;
+  }
+
+  auto closure(NfaState const* state) const { return closure(std::array {state}); }
+
+  template <typename Range> auto closure(Range&& states) const -> std::set<NfaState const*> {
+    std::set<NfaState const*> closureStates {};
+    std::queue<NfaState const*> newStates {};
+    for (auto const* state : std::forward<Range>(states)) {
+      newStates.push(state);
+      closureStates.insert(state);
+    }
+    while (!newStates.empty()) {
+      auto const* currentState = newStates.front();
+      newStates.pop();
+      for (auto&& nextState : currentState->next(std::nullopt)) {
+        if (!closureStates.contains(nextState.get())) {
+          closureStates.insert(nextState.get());
+          newStates.push(nextState.get());
+        }
+      }
+    }
+    return closureStates;
+  }
+
 public:
   using Automata::Automata;
+
+  template <typename Range> auto isAccepting(Range&& states) const -> std::tuple<bool, NfaState const*> {
+    for (auto const* state : std::forward<Range>(states)) {
+      if (Base::isAccepting(state)) {
+        return {true, state};
+      }
+    }
+    return {false, nullptr};
+  }
 
   auto fromRegex(Regex const& regex) {
     std::stack<NfaAutomata> automataStack;
@@ -62,7 +106,7 @@ public:
     auto operatorSwitch = [&getAutomata](Operator const& op) {
       using namespace operators;
       if (op == starOp) {
-        return closure(getAutomata());
+        return kleeneClosure(getAutomata());
       }
       auto rhs = getAutomata();
       auto lhs = getAutomata();
@@ -77,10 +121,8 @@ public:
     };
 
     using enum RegexSyntaxTreeTraversal::Order;
-    auto&& tree = regex.parse();
-    for (auto const node : RegexSyntaxTreeTraversal {POSTORDER, tree.root().get()}) {
-      auto [isOp, op] = regex.operators().isOperator(node->_character);
-      if (isOp) {
+    for (auto&& tree = regex.parse(); auto const node : RegexSyntaxTreeTraversal {POSTORDER, tree.root().get()}) {
+      if (auto [isOp, op] = regex.operators().isOperator(node->_character); isOp) {
         automataStack.push(operatorSwitch(op));
       } else {
         automataStack.push(character(node->_character));
@@ -88,6 +130,14 @@ public:
     }
 
     *this = automataStack.top();
+  }
+
+  auto __simulate(std::string_view const str) const -> std::tuple<bool, NfaState const*> {
+    auto currentState = closure(const_cast<NfaState const*>(start().get()));
+    for (auto const c : str) {
+      currentState = closure(next(currentState, c));
+    }
+    return isAccepting(currentState);
   }
 };
 } // namespace au

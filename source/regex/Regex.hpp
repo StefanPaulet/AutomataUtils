@@ -5,6 +5,8 @@
 #pragma once
 
 #include "RegexSyntaxTree.hpp"
+#include "alphabet/Alphabet.hpp"
+#include "operator/Operator.hpp"
 #include <stack>
 #include <string>
 

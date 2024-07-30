@@ -6,6 +6,7 @@
 #include "regex/Regex.cpp"
 #include "regex/Regex.hpp"
 #include "gtest/gtest.h"
+#include "operator/Operator.hpp"
 
 namespace {
 using namespace au;
@@ -30,7 +31,6 @@ auto node(Operator const& op, char left, char right) -> std::unique_ptr<Node> {
 }
 
 auto tree(std::unique_ptr<Node>&& root) { return RegexSyntaxTree {std::move(root)}; }
-} // namespace
 
 auto testOrFailureDump(Regex const& r, RegexSyntaxTree&& expected) {
   auto actual = std::move(r.parse());
@@ -59,6 +59,7 @@ auto testException(Regex const& r, std::string const& expectedMessage) {
   }
   ASSERT_TRUE(false);
 }
+} // namespace
 
 TEST(RegexTest, Construction) {
   Regex const r1 {};
@@ -235,6 +236,26 @@ TEST(RegexTest, ParseExtra5) {
       )
     )
   ));
+}
+
+TEST(RegexTest, Traversals) {
+  Regex const r {"a|b"};
+  using enum RegexSyntaxTreeTraversal::Order;
+  auto compare = [](std::vector<RegexSyntaxTreeNode*> real, std::array<char, 3> expected) {
+    auto expIt = expected.begin();
+    for (auto const& node : real) {
+      ASSERT_EQ(node->_character, *expIt++);
+    }
+  };
+
+  RegexSyntaxTreeTraversal inOrder {INORDER, r.parse().root().get()};
+  auto inOrderExpected = std::array<char, 3> {'a', '|', 'b'};
+
+  RegexSyntaxTreeTraversal preOrder {PREORDER, r.parse().root().get()};
+  auto preOrderExpected = std::array<char, 3> {'|', 'A', 'b'};
+
+  RegexSyntaxTreeTraversal postOrder {POSTORDER, r.parse().root().get()};
+  auto postOrderExpected = std::array<char, 3> {'a', 'b', '|'};
 }
 
 TEST(RegexTest, Exception1) {

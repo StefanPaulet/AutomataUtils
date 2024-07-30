@@ -13,9 +13,15 @@ namespace au {
 
 template <typename D, typename StateContainerType> class State {
 public:
-  [[nodiscard]] auto next(std::optional<char> c) const -> StateContainerType const& { return _transitions.at(c); }
-  auto addTransition(std::optional<char> chr, std::shared_ptr<D> const& state) -> void {
-    static_cast<D*>(this)->__addTransition(chr, state);
+  [[nodiscard]] auto next(std::optional<char> c) const -> StateContainerType const& {
+    try {
+      return _transitions.at(c);
+    } catch (std::out_of_range const&) {
+      return D::deadState;
+    }
+  }
+  auto addTransition(std::optional<char> sym, std::shared_ptr<D> const& state) -> void {
+    static_cast<D*>(this)->__addTransition(sym, state);
   }
   [[nodiscard]] auto const& transitions() const { return _transitions; }
 
@@ -25,9 +31,11 @@ protected:
 
 class NfaState : public State<NfaState, std::vector<std::shared_ptr<NfaState>>> {
 public:
-  auto __addTransition(std::optional<char> chr, std::shared_ptr<NfaState> const& state) -> void {
-    _transitions[chr].push_back(state);
+  auto __addTransition(std::optional<char> sym, std::shared_ptr<NfaState> const& state) -> void {
+    _transitions[sym].push_back(state);
   }
+
+  static inline std::vector<std::shared_ptr<NfaState>> deadState;
 };
 
 template <> struct DotNodePrinter<NfaState> {
@@ -46,11 +54,11 @@ template <> struct DotNodePrinter<NfaState> {
 
 template <> struct DotEdgePrinter<NfaState> {
   auto operator()(NfaState const* n1, NfaState const* n2) const -> std::string {
-    for (auto const& [chr, states] : n1->transitions()) {
+    for (auto const& [sym, states] : n1->transitions()) {
       for (auto const& state : states) {
         if (state.get() == n2) {
-          if (chr.has_value()) {
-            return std::string(1, chr.value());
+          if (sym.has_value()) {
+            return std::string(1, sym.value());
           }
           return "eps";
         }

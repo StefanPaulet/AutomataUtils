@@ -22,6 +22,12 @@ public:
   auto const& accepting() const { return _accepting; }
   auto& start() { return _start; }
   auto& accepting() { return _accepting; }
+  auto simulate(std::string_view string) const -> std::tuple<bool, StateType const*> {
+    return static_cast<D const*>(this)->__simulate(string);
+  }
+
+  auto next(StateType const* state, std::optional<char> sym) const { return state->next(sym); }
+  auto isAccepting(StateType const* state) const -> bool { return state == _accepting.get(); }
 
 protected:
   std::shared_ptr<StateType> _start {std::make_shared<StateType>()};
