@@ -6,6 +6,7 @@
 
 #include <format>
 #include <iostream>
+#include <memory>
 #include <utils/Printer.hpp>
 #include <vector>
 

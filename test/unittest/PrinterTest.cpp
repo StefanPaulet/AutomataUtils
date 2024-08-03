@@ -6,6 +6,7 @@
 #include "regex/RegexSyntaxTree.hpp"
 #include "gtest/gtest.h"
 #include <fstream>
+#include <automata/dfa/DFA.hpp>
 #include <automata/nfa/NFA.hpp>
 
 namespace {
@@ -75,4 +76,27 @@ TEST(NfaPrinterTest, DotGraphPrinter) {
 }
 )";
   testPrinter(DotGraphPrinter {true, "nfaGraph"}, NfaAutomata {r}.start().get(), dotString);
+}
+
+TEST(DfaPrinterTest, DotGraphPrinter) {
+  Regex r {"(a|b)*abb"};
+  auto const dotString = R"(digraph dfaGraph {
+  n0 [label="0", color="black"];
+  n0 -> n1 [label="a"];
+  n0 -> n2 [label="b"];
+  n1 [label="1", color="black"];
+  n1 -> n1 [label="a"];
+  n1 -> n3 [label="b"];
+  n2 [label="2", color="black"];
+  n2 -> n1 [label="a"];
+  n2 -> n2 [label="b"];
+  n3 [label="3", color="black"];
+  n3 -> n1 [label="a"];
+  n3 -> n4 [label="b"];
+  n4 [label="4", color="black"];
+  n4 -> n1 [label="a"];
+  n4 -> n2 [label="b"];
+}
+)";
+  testPrinter(DotGraphPrinter {true, "dfaGraph"}, NfaToDfaParser {}.parse(NfaAutomata {r}).start().get(), dotString);
 }

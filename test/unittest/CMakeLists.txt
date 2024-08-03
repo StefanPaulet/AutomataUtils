@@ -19,6 +19,11 @@ add_executable(unittests unitTest.cpp
     RegexTest.cpp
     PrinterTest.cpp
     NfaTest.cpp
-    StateTest.cpp)
+    StateTest.cpp
+    DfaTest.cpp)
 target_link_libraries(unittests lib.gtest)
 target_include_directories(unittests PRIVATE ../../source)
+
+set_target_properties(
+    unittests
+    PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

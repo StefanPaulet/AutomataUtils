@@ -11,7 +11,8 @@
 
 namespace {
 using namespace au;
-using namespace au::test::nfa;
+using test::Edge;
+using namespace test::nfa;
 
 auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
   std::unordered_map<std::shared_ptr<NfaState>, std::shared_ptr<NfaState>> stateEquivalence {};
@@ -68,7 +69,7 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
 }
 } // namespace
 
-TEST(NfaTest, Loop) {
+TEST(NfaTest, LoopComparison) {
   auto test1 = testMachine(2, {
   Edge{0, 1, std::nullopt},
   Edge{1, 0, std::nullopt}});
@@ -78,7 +79,7 @@ TEST(NfaTest, Loop) {
   ASSERT_TRUE(compare(test1, test2));
 }
 
-TEST(NfaTest, Comparison) {
+TEST(NfaTest, FromRegex) {
   auto regex = Regex("(a|b)*abb");
   auto nfa = NfaAutomata {regex};
   auto target = testMachine(11,{

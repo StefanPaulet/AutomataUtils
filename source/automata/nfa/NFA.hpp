@@ -5,15 +5,70 @@
 #pragma once
 
 #include <automata/Automata.hpp>
-#include <automata/state/State.hpp>
+#include <automata/state/NfaState.hpp>
 #include <cassert>
-#include <set>
+#include <type_traits>
+#include <unordered_set>
 
 namespace au {
+
+class RegexToNfaParser;
+
 class NfaAutomata : public Automata<NfaAutomata, NfaState> {
 private:
+  friend class RegexToNfaParser;
+  friend class NfaToDfaParser;
+
   using Base = Automata<NfaAutomata, NfaState>;
 
+  template <typename Range> auto next(Range&& states, std::optional<char> symbol) const {
+    std::unordered_set<NfaState const*> nextStates {};
+    for (auto&& state : std::forward<Range>(states)) {
+      for (auto const& nextState : state->next(symbol)) {
+        nextStates.insert(nextState.get());
+      }
+    }
+    return nextStates;
+  }
+
+  auto closure(NfaState const* state) const { return closure(std::array {state}); }
+
+  template <typename Range, std::enable_if_t<!std::is_same_v<std::remove_cvref_t<Range>, NfaState*>, int> = 0>
+  auto closure(Range&& states) const -> std::unordered_set<NfaState const*> {
+    std::unordered_set<NfaState const*> closureStates {};
+    std::queue<NfaState const*> newStates {};
+    for (auto const* state : std::forward<Range>(states)) {
+      newStates.push(state);
+      closureStates.insert(state);
+    }
+    while (!newStates.empty()) {
+      auto const* currentState = newStates.front();
+      newStates.pop();
+      for (auto&& nextState : currentState->next(std::nullopt)) {
+        if (!closureStates.contains(nextState.get())) {
+          closureStates.insert(nextState.get());
+          newStates.push(nextState.get());
+        }
+      }
+    }
+    return closureStates;
+  }
+
+public:
+  using RegexParser = RegexToNfaParser;
+  using Automata::Automata;
+
+  auto __simulate(std::string_view const str) const -> std::tuple<bool, NfaState const*> {
+    auto currentState = closure(start().get());
+    for (auto const c : str) {
+      currentState = closure(next(currentState, c));
+    }
+    return isAccepting(currentState);
+  }
+};
+
+class RegexToNfaParser {
+private:
   static auto character(char c) -> NfaAutomata {
     NfaAutomata res {};
     res._start->addTransition(c, res._accepting);
@@ -51,51 +106,8 @@ private:
     return res;
   }
 
-  template <typename Range> auto next(Range&& states, std::optional<char> symbol) const {
-    std::set<NfaState const*> nextStates {};
-    for (auto&& state : std::forward<Range>(states)) {
-      for (auto const& nextState : state->next(symbol)) {
-        nextStates.insert(nextState.get());
-      }
-    }
-    return nextStates;
-  }
-
-  auto closure(NfaState const* state) const { return closure(std::array {state}); }
-
-  template <typename Range> auto closure(Range&& states) const -> std::set<NfaState const*> {
-    std::set<NfaState const*> closureStates {};
-    std::queue<NfaState const*> newStates {};
-    for (auto const* state : std::forward<Range>(states)) {
-      newStates.push(state);
-      closureStates.insert(state);
-    }
-    while (!newStates.empty()) {
-      auto const* currentState = newStates.front();
-      newStates.pop();
-      for (auto&& nextState : currentState->next(std::nullopt)) {
-        if (!closureStates.contains(nextState.get())) {
-          closureStates.insert(nextState.get());
-          newStates.push(nextState.get());
-        }
-      }
-    }
-    return closureStates;
-  }
-
 public:
-  using Automata::Automata;
-
-  template <typename Range> auto isAccepting(Range&& states) const -> std::tuple<bool, NfaState const*> {
-    for (auto const* state : std::forward<Range>(states)) {
-      if (Base::isAccepting(state)) {
-        return {true, state};
-      }
-    }
-    return {false, nullptr};
-  }
-
-  auto fromRegex(Regex const& regex) {
+  auto parse(Regex const& regex) {
     std::stack<NfaAutomata> automataStack;
     auto getAutomata = [&automataStack]() {
       auto automata = automataStack.top();
@@ -129,15 +141,8 @@ public:
       }
     }
 
-    *this = automataStack.top();
-  }
-
-  auto __simulate(std::string_view const str) const -> std::tuple<bool, NfaState const*> {
-    auto currentState = closure(const_cast<NfaState const*>(start().get()));
-    for (auto const c : str) {
-      currentState = closure(next(currentState, c));
-    }
-    return isAccepting(currentState);
+    return automataStack.top();
   }
 };
+
 } // namespace au

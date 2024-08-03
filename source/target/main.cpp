@@ -1,6 +1,7 @@
 //
 // Created by stefan on 7/9/24.
 //
+#include <automata/dfa/DFA.hpp>
 #include <automata/nfa/NFA.hpp>
 #include <fstream>
 
