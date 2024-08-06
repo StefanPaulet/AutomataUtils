@@ -25,6 +25,7 @@ public:
     static_cast<D*>(this)->__addTransition(sym, state);
   }
   [[nodiscard]] auto const& transitions() const { return _transitions; }
+  [[nodiscard]] auto nextStates() const { return static_cast<D const*>(this)->__nextStates(); }
 
 protected:
   std::unordered_map<std::optional<char>, StateContainerType> _transitions {};

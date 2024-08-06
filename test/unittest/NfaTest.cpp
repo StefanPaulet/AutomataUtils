@@ -65,7 +65,7 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
     }
     return true;
   };
-  return equivalent(n1.start(), n2.start());
+  return n1.size() == n2.size() && equivalent(n1.start(), n2.start());
 }
 } // namespace
 

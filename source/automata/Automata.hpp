@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <regex/Regex.hpp>
+#include <unordered_set>
 
 namespace au {
 template <typename D, typename ST> class Automata {
@@ -16,7 +17,7 @@ public:
   Automata(Automata const&) = default;
   Automata(Automata&&) noexcept = default;
   Automata(std::shared_ptr<StateType> start, std::shared_ptr<StateType> accepting) :
-      _start {start}, _accepting {_accepting} {}
+      _start {start}, _accepting {accepting} {}
   auto operator=(Automata const& other) -> Automata& = default;
   auto operator=(Automata&& other) noexcept -> Automata& = default;
 
@@ -47,6 +48,24 @@ public:
     }
     return {false, nullptr};
   }
+
+  auto states() const -> std::vector<StateType const*> {
+    std::vector<StateType const*> stateSet;
+    stateSet.push_back(_start.get());
+
+    for (auto currIdx = 0ul, lastIdx = stateSet.size(); currIdx < lastIdx; ++currIdx) {
+      auto const* currentState = stateSet[currIdx];
+      for (auto const* next : currentState->nextStates()) {
+        if (std::ranges::find(stateSet, next) == stateSet.end()) {
+          stateSet.emplace_back(next);
+          ++lastIdx;
+        }
+      }
+    }
+    return stateSet;
+  }
+
+  auto size() const { return states().size(); }
 
 protected:
   std::shared_ptr<StateType> _start {std::make_shared<StateType>()};

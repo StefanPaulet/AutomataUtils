@@ -7,7 +7,6 @@
 #include <automata/Automata.hpp>
 #include <automata/state/NfaState.hpp>
 #include <cassert>
-#include <type_traits>
 #include <unordered_set>
 
 namespace au {
@@ -18,8 +17,6 @@ class NfaAutomata : public Automata<NfaAutomata, NfaState> {
 private:
   friend class RegexToNfaParser;
   friend class NfaToDfaParser;
-
-  using Base = Automata<NfaAutomata, NfaState>;
 
   template <typename Range> auto next(Range&& states, std::optional<char> symbol) const {
     std::unordered_set<NfaState const*> nextStates {};

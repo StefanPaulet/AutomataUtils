@@ -7,6 +7,7 @@
 #include "State.hpp"
 #include <algorithm>
 #include <ranges>
+#include <unordered_set>
 
 namespace au {
 
@@ -20,6 +21,14 @@ public:
       throw exceptions::DfaConflictingTransitionException {sym};
     }
     _transitions.emplace(sym, state);
+  }
+
+  auto __nextStates() const -> std::unordered_set<DfaState const*> {
+    std::unordered_set<DfaState const*> result {};
+    for (auto const& state : std::views::values(_transitions)) {
+      result.insert(state.get());
+    }
+    return result;
   }
 
   static inline std::shared_ptr<DfaState> deadState = std::make_shared<DfaState>();

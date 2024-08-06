@@ -5,6 +5,7 @@
 #pragma once
 
 #include "State.hpp"
+#include <ranges>
 
 namespace au {
 
@@ -13,6 +14,16 @@ class NfaState : public State<NfaState, std::vector<std::shared_ptr<NfaState>>> 
 public:
   auto __addTransition(std::optional<char> sym, std::shared_ptr<NfaState> const& state) -> void {
     _transitions[sym].push_back(state);
+  }
+
+  auto __nextStates() const -> std::unordered_set<NfaState const*> {
+    std::unordered_set<NfaState const*> result {};
+    for (auto const& next : std::views::values(_transitions)) {
+      for (auto const& state : next) {
+        result.insert(state.get());
+      }
+    }
+    return result;
   }
 
   static inline std::vector<std::shared_ptr<NfaState>> deadState;

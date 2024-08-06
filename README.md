@@ -10,5 +10,5 @@
   - [ ] Regex to DFA (directly with followpos)
   - [ ] KMP and AhoCorasick
   - [x] NFA to DFA
-  - [ ] DFA minimization 
+  - [x] DFA minimization 
 - [ ] GUI

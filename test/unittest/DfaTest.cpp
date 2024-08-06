@@ -80,3 +80,53 @@ TEST(DfaTest, Simulation) {
   ASSERT_TRUE(std::get<0>(dfa.simulate(minimallyAcceptedStirng)));
   ASSERT_FALSE(std::get<0>(dfa.simulate(partiallyMatchedString)));
 }
+
+TEST(DfaTest, Minimization) {
+  auto regex = Regex("(a|b)*abb");
+  auto dfa = NfaToDfaParser {}.parse(NfaAutomata {regex});
+
+  auto minimalDfa = dfa.minimize();
+
+  auto target = testMachine(4, {
+    Edge {0, 0, 'b'},
+    Edge {0, 1, 'a'},
+    Edge {1, 1, 'a'},
+    Edge {1, 2, 'b'},
+    Edge {2, 1, 'a'},
+    Edge {2, 3, 'b'},
+    Edge {3, 0, 'b'},
+    Edge {3, 1, 'a'}
+  });
+
+  ASSERT_TRUE(compare(minimalDfa, target));
+}
+
+TEST(DfaTest, Minimization2) {
+  auto dfa = testMachine(6, {
+    Edge {0, 3, '0'},
+    Edge {0, 1, '1'},
+    Edge {1, 2, '0'},
+    Edge {1, 5, '1'},
+    Edge {2, 2, '0'},
+    Edge {2, 5, '1'},
+    Edge {3, 0, '0'},
+    Edge {3, 4, '1'},
+    Edge {4, 2, '0'},
+    Edge {4, 5, '1'},
+    Edge {5, 5, '0'},
+    Edge {5, 5, '1'}
+  });
+
+  auto minimalDfa = dfa.minimize();
+
+  auto target = testMachine(3, {
+    Edge {0, 0, '0'},
+    Edge {0, 1, '1'},
+    Edge {1, 1, '0'},
+    Edge {1, 2, '1'},
+    Edge {2, 2, '0'},
+    Edge {2, 2, '1'}
+  });
+
+  ASSERT_TRUE(compare(minimalDfa, target));
+}
