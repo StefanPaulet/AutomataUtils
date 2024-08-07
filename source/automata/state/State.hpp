@@ -12,23 +12,21 @@
 
 namespace au {
 
-template <typename D, typename StateContainerType> class State {
+template <typename D, typename TransitionType, typename StateContainerType> class State {
 public:
-  [[nodiscard]] auto next(std::optional<char> c) const -> StateContainerType const& {
+  [[nodiscard]] auto next(TransitionType c) const -> StateContainerType const& {
     try {
       return _transitions.at(c);
     } catch (std::out_of_range const&) {
-      return D::deadState;
+      return D::deadState();
     }
   }
-  auto addTransition(std::optional<char> sym, std::shared_ptr<D> const& state) -> void {
-    static_cast<D*>(this)->__addTransition(sym, state);
-  }
+  auto addTransition(TransitionType sym, D* state) -> void { static_cast<D*>(this)->__addTransition(sym, state); }
   [[nodiscard]] auto const& transitions() const { return _transitions; }
   [[nodiscard]] auto nextStates() const { return static_cast<D const*>(this)->__nextStates(); }
 
 protected:
-  std::unordered_map<std::optional<char>, StateContainerType> _transitions {};
+  std::unordered_map<TransitionType, StateContainerType> _transitions {};
 };
 
 } // namespace au

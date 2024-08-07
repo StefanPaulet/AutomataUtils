@@ -10,23 +10,27 @@
 namespace au {
 
 
-class NfaState : public State<NfaState, std::vector<std::shared_ptr<NfaState>>> {
+class NfaState : public State<NfaState, std::optional<char>, std::vector<NfaState*>> {
+private:
 public:
-  auto __addTransition(std::optional<char> sym, std::shared_ptr<NfaState> const& state) -> void {
-    _transitions[sym].push_back(state);
-  }
+  using StateType = NfaState*;
+
+  auto __addTransition(std::optional<char> sym, NfaState* state) -> void { _transitions[sym].push_back(state); }
 
   auto __nextStates() const -> std::unordered_set<NfaState const*> {
     std::unordered_set<NfaState const*> result {};
     for (auto const& next : std::views::values(_transitions)) {
       for (auto const& state : next) {
-        result.insert(state.get());
+        result.insert(state);
       }
     }
     return result;
   }
 
-  static inline std::vector<std::shared_ptr<NfaState>> deadState;
+  [[nodiscard]] static auto deadState() -> std::vector<NfaState*>& {
+    static std::vector<NfaState*> ds {};
+    return ds;
+  }
 };
 
 template <> struct DotNodePrinter<NfaState> {
@@ -44,30 +48,37 @@ template <> struct DotNodePrinter<NfaState> {
 };
 
 template <> struct DotEdgePrinter<NfaState> {
-  auto operator()(NfaState const* n1, NfaState const* n2) const -> std::string {
+  auto operator()(NfaState const* n1, NfaState const* n2) const -> std::vector<std::string> {
+    std::vector<std::string> result {};
     for (auto const& [sym, states] : n1->transitions()) {
       for (auto const& state : states) {
-        if (state.get() == n2) {
+        if (state == n2) {
           if (sym.has_value()) {
-            return std::string(1, sym.value());
+            result.emplace_back(std::string(1, sym.value()));
+          } else {
+            result.emplace_back("eps");
           }
-          return "eps";
         }
       }
     }
-    return "";
+    return result;
   }
 };
 
 template <> struct GraphNodeChildren<NfaState> {
   auto operator()(NfaState const* n) const {
-    std::vector<NfaState const*> nodes {};
+    std::unordered_set<NfaState const*> nodes {};
+    std::vector<NfaState const*> result {};
     for (auto const& [_, states] : n->transitions()) {
       for (auto const& state : states) {
-        nodes.push_back(state.get());
+        auto next = state;
+        if (!nodes.contains(next)) {
+          nodes.emplace(next);
+          result.emplace_back(next);
+        }
       }
     }
-    return nodes;
+    return result;
   }
 };
 } // namespace au

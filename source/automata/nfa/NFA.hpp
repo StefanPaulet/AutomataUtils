@@ -22,7 +22,7 @@ private:
     std::unordered_set<NfaState const*> nextStates {};
     for (auto&& state : std::forward<Range>(states)) {
       for (auto const& nextState : state->next(symbol)) {
-        nextStates.insert(nextState.get());
+        nextStates.insert(nextState);
       }
     }
     return nextStates;
@@ -42,9 +42,9 @@ private:
       auto const* currentState = newStates.front();
       newStates.pop();
       for (auto&& nextState : currentState->next(std::nullopt)) {
-        if (!closureStates.contains(nextState.get())) {
-          closureStates.insert(nextState.get());
-          newStates.push(nextState.get());
+        if (!closureStates.contains(nextState)) {
+          closureStates.insert(nextState);
+          newStates.push(nextState);
         }
       }
     }
@@ -56,7 +56,7 @@ public:
   using Automata::Automata;
 
   auto __simulate(std::string_view const str) const -> std::tuple<bool, NfaState const*> {
-    auto currentState = closure(start().get());
+    auto currentState = closure(start());
     for (auto const c : str) {
       currentState = closure(next(currentState, c));
     }
@@ -72,8 +72,9 @@ private:
     return res;
   }
 
-  static auto composition(NfaAutomata const& lhs, NfaAutomata const& rhs) -> NfaAutomata {
+  static auto composition(NfaAutomata&& lhs, NfaAutomata&& rhs) -> NfaAutomata {
     NfaAutomata res;
+
     res._start = lhs._start;
     res._accepting = lhs._accepting;
     for (auto const& [sym, states] : rhs._start->transitions()) {
@@ -82,32 +83,43 @@ private:
       }
     }
     res._accepting = rhs._accepting;
+
+    res.takeOwnership(std::move(lhs));
+    res.takeOwnership(std::move(rhs));
     return res;
   }
 
-  static auto disjunction(NfaAutomata const& lhs, NfaAutomata const& rhs) -> NfaAutomata {
+  static auto disjunction(NfaAutomata&& lhs, NfaAutomata&& rhs) -> NfaAutomata {
     NfaAutomata res;
-    res._start->addTransition(std::nullopt, lhs._start);
-    res._start->addTransition(std::nullopt, rhs._start);
+
     lhs._accepting->addTransition(std::nullopt, res._accepting);
     rhs._accepting->addTransition(std::nullopt, res._accepting);
+
+    res._start->addTransition(std::nullopt, lhs._start);
+    res._start->addTransition(std::nullopt, rhs._start);
+
+    res.takeOwnership(std::move(lhs));
+    res.takeOwnership(std::move(rhs));
     return res;
   }
 
-  static auto kleeneClosure(NfaAutomata const& automata) -> NfaAutomata {
+  static auto kleeneClosure(NfaAutomata&& automata) -> NfaAutomata {
     NfaAutomata res;
+
     res._start->addTransition(std::nullopt, automata._start);
     res._start->addTransition(std::nullopt, res._accepting);
     automata._accepting->addTransition(std::nullopt, automata._start);
     automata._accepting->addTransition(std::nullopt, res._accepting);
+
+    res.takeOwnership(std::move(automata));
     return res;
   }
 
 public:
   auto parse(Regex const& regex) {
     std::stack<NfaAutomata> automataStack;
-    auto getAutomata = [&automataStack]() {
-      auto automata = automataStack.top();
+    auto getAutomata = [&automataStack]() -> NfaAutomata {
+      auto automata = std::move(automataStack.top());
       automataStack.pop();
       return automata;
     };
@@ -120,10 +132,10 @@ public:
       auto rhs = getAutomata();
       auto lhs = getAutomata();
       if (op == catOp) {
-        return composition(lhs, rhs);
+        return composition(std::move(lhs), std::move(rhs));
       }
       if (op == orOp) {
-        return disjunction(lhs, rhs);
+        return disjunction(std::move(lhs), std::move(rhs));
       }
 
       assert(false && "Unknown operator found");
@@ -138,7 +150,7 @@ public:
       }
     }
 
-    return automataStack.top();
+    return getAutomata();
   }
 };
 

@@ -4,6 +4,7 @@
 
 #include "regex/Regex.hpp"
 #include "regex/RegexSyntaxTree.hpp"
+#include "utils/Utils.hpp"
 #include "gtest/gtest.h"
 #include <fstream>
 #include <automata/dfa/DFA.hpp>
@@ -75,7 +76,25 @@ TEST(NfaPrinterTest, DotGraphPrinter) {
   n7 -> n2 [label="eps"];
 }
 )";
-  testPrinter(DotGraphPrinter {true, "nfaGraph"}, NfaAutomata {r}.start().get(), dotString);
+  testPrinter(DotGraphPrinter {true, "nfaGraph"}, NfaAutomata {r}.start(), dotString);
+}
+
+TEST(NfaPrinterTest, MultipleTransitionPrinter) {
+  using namespace test::nfa;
+  auto target = testMachine(2, {
+    Edge {0, 1, 'a'},
+    Edge {0, 1, 'b'},
+    Edge {0, 1, std::nullopt},
+  });
+  auto const dotString = R"(digraph dfaGraph {
+  n0 [label="0", color="black"];
+  n0 -> n1 [label="a"];
+  n0 -> n1 [label="b"];
+  n0 -> n1 [label="eps"];
+  n1 [label="1", color="black"];
+}
+)";
+  testPrinter(DotGraphPrinter {true, "dfaGraph"}, target.start(), dotString);
 }
 
 TEST(DfaPrinterTest, DotGraphPrinter) {
@@ -98,5 +117,21 @@ TEST(DfaPrinterTest, DotGraphPrinter) {
   n4 -> n2 [label="b"];
 }
 )";
-  testPrinter(DotGraphPrinter {true, "dfaGraph"}, NfaToDfaParser {}.parse(NfaAutomata {r}).start().get(), dotString);
+  testPrinter(DotGraphPrinter {true, "dfaGraph"}, NfaToDfaParser {}.parse(NfaAutomata {r}).start(), dotString);
+}
+
+TEST(DfaPrinterTest, MultipleTransitionPrinter) {
+  using namespace test::dfa;
+  auto target = testMachine(2, {
+    Edge {0, 1, 'a'},
+    Edge {0, 1, 'b'}
+  });
+  auto const dotString = R"(digraph dfaGraph {
+  n0 [label="0", color="black"];
+  n0 -> n1 [label="a"];
+  n0 -> n1 [label="b"];
+  n1 [label="1", color="black"];
+}
+)";
+  testPrinter(DotGraphPrinter {true, "dfaGraph"}, target.start(), dotString);
 }

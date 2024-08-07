@@ -9,23 +9,26 @@
 
 namespace au::test {
 
+template <typename TransitionType>
 struct Edge {
   unsigned int startIdx;
   unsigned int endIdx;
-  std::optional<char> symbol;
+  TransitionType symbol;
 };
 
-template <typename Automata>
-auto testMachine(unsigned int totalStates, std::vector<Edge> const& edges) {
-  std::vector<std::shared_ptr<typename Automata::StateType>> container;
-  container.reserve(totalStates);
-  for (auto idx = 0; idx < totalStates; ++idx) {
-    container.push_back(std::make_shared<typename Automata::StateType>());
-  }
+template <typename Automata, typename TransitionType>
+auto testMachine(unsigned int totalStates, std::vector<Edge<TransitionType>> const& edges) {
 
-  Automata automata;
-  automata.start() = container[0];
-  automata.accepting() = container[totalStates - 1];
+  Automata automata {};
+
+  std::vector<typename Automata::StateType*> container;
+  container.reserve(totalStates);
+
+  container.emplace_back(automata.start());
+  for (auto idx = 1; idx < totalStates - 1; ++idx) {
+    container.emplace_back(automata.allocate());
+  }
+  container.emplace_back(automata.accepting());
 
   for (auto const& edge : edges) {
     container[edge.startIdx]->addTransition(edge.symbol, container[edge.endIdx]);
@@ -35,13 +38,15 @@ auto testMachine(unsigned int totalStates, std::vector<Edge> const& edges) {
 }
 
 namespace nfa {
-inline auto testMachine(unsigned int totalStates, std::vector<Edge> const& edges) {
+using Edge = Edge<std::optional<char>>;
+inline auto testMachine(unsigned int const totalStates, std::vector<Edge> const& edges) {
   return testMachine<NfaAutomata>(totalStates, edges);
 }
 } // namespace nfa
 
 namespace dfa {
-inline auto testMachine(unsigned int totalStates, std::vector<Edge> const& edges) {
+using Edge = Edge<char>;
+inline auto testMachine(unsigned int const totalStates, std::vector<Edge> const& edges) {
   return testMachine<DfaAutomata>(totalStates, edges);
 }
 }

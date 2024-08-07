@@ -65,7 +65,7 @@ template <typename N> struct DotNodePrinter {
 };
 
 template <typename N> struct DotEdgePrinter {
-  auto operator()([[maybe_unused]] N const*, [[maybe_unused]] N const*) const -> std::string { return ""; }
+  auto operator()([[maybe_unused]] N const*, [[maybe_unused]] N const*) const -> std::vector<std::string> { return {}; }
 };
 
 template <typename N> class DotNodeVisitor {
@@ -125,11 +125,19 @@ public:
       out << std::string(indents, ' ')
           << std::format(R"(n{} [label="{}", color="{}"];)", currentId, np.label(current), np.colour(current)) << '\n';
       for (auto const& child : childrenOf(current)) {
-        auto edgeLabel = ep(current, child);
-        out << std::string(indents, ' ')
-            << std::format(R"(n{} -{} n{}{})", currentId, _oriented ? ">" : "-", nv.id(child),
-                           !edgeLabel.empty() ? std::format(R"( [label="{}"])", edgeLabel) : "")
-            << ";\n";
+        auto edgeLabels = ep(current, child);
+        if (!edgeLabels.empty()) {
+          std::sort(edgeLabels.begin(), edgeLabels.end());
+          for (auto const& edgeLabel : edgeLabels) {
+            out << std::string(indents, ' ')
+                << std::format(R"(n{} -{} n{}{})", currentId, _oriented ? ">" : "-", nv.id(child),
+                               !edgeLabel.empty() ? std::format(R"( [label="{}"])", edgeLabel) : "")
+                << ";\n";
+          }
+        } else {
+          out << std::string(indents, ' ')
+              << std::format(R"(n{} -{} n{})", currentId, _oriented ? ">" : "-", nv.id(child)) << ";\n";
+        }
         queue.push(child);
       }
     }

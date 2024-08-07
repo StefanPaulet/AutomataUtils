@@ -26,9 +26,9 @@ public:
   using RegexParser = RegexToDfaParser;
 
   auto __simulate(std::string_view const str) const -> std::tuple<bool, DfaState const*> {
-    auto* currentState = start().get();
+    auto* currentState = start();
     for (auto chr : str) {
-      currentState = currentState->next(chr).get();
+      currentState = currentState->next(chr);
     }
     if (isAccepting(currentState)) {
       return {true, currentState};
@@ -52,18 +52,18 @@ private:
   using StateQueue = std::queue<StateSet>;
 
 public:
-  auto parse(NfaAutomata const& source) {
+  auto parse(NfaAutomata const& source) -> DfaAutomata {
     DfaAutomata dfa {};
 
-    auto startState = source.closure(source.start().get());
+    auto startState = source.closure(source.start());
 
     StateQueue stateQueue;
     stateQueue.push(startState);
 
-    std::unordered_map<StateSet, std::shared_ptr<DfaState>, SetHasher> visitedStates;
+    std::unordered_map<StateSet, DfaState*, SetHasher> visitedStates;
     visitedStates.emplace(startState, dfa.start());
 
-    std::vector<std::shared_ptr<DfaState>> endStates;
+    std::vector<DfaState*> endStates;
 
     while (!stateQueue.empty()) {
       auto currentState = stateQueue.front();
@@ -82,7 +82,7 @@ public:
         auto nextState = source.closure(source.next(currentState, nextSym));
         auto nextStIt = visitedStates.find(nextState);
         if (nextStIt == visitedStates.end()) {
-          nextStIt = visitedStates.emplace(nextState, std::make_unique<DfaState>()).first;
+          nextStIt = visitedStates.emplace(nextState, dfa.allocate()).first;
           stateQueue.push(nextState);
           if (std::get<0>(source.isAccepting(nextState))) {
             endStates.push_back(nextStIt->second);
@@ -151,7 +151,7 @@ private:
     for (auto const* state : set) {
       newSets.back().push_back(state);
       for (auto const sym : std::views::keys(state->transitions())) {
-        symSet.emplace(sym.value());
+        symSet.emplace(sym);
       }
     }
 
@@ -160,8 +160,8 @@ private:
       for (auto const* state : set) {
         auto nextState = state->next(sym);
         StateSet targetSet;
-        if (nextState != DfaState::deadState) {
-          targetSet = findGroup(currentPartition, nextState.get());
+        if (nextState != DfaState::deadState()) {
+          targetSet = findGroup(currentPartition, nextState);
         } else {
           continue;
         }
@@ -202,20 +202,33 @@ public:
       }
     }
 
-    std::unordered_map<StateSet, std::shared_ptr<DfaState>, SetHasher> representatives {};
+    DfaAutomata result {};
+
+    std::unordered_map<StateSet, DfaState*, SetHasher> representatives {};
+
+    auto startGroup = findGroup(part, dfa.start());
+    auto accGroup = findGroup(part, dfa.accepting());
+
     for (auto const& group : part) {
-      representatives.emplace(group, std::make_shared<DfaState>());
+      if (group == startGroup) {
+        representatives.emplace(group, result.start());
+        continue;
+      }
+      if (group == accGroup) {
+        representatives.emplace(group, result.accepting());
+        continue;
+      }
+      representatives.emplace(group, result.allocate());
     }
 
     for (auto const& group : part) {
       for (auto const& [sym, link] : group.front()->transitions()) {
-        auto targetGroup = findGroup(part, link.get());
+        auto targetGroup = findGroup(part, link);
         representatives.at(group)->addTransition(sym, representatives.at(targetGroup));
       }
     }
 
-    return DfaAutomata {representatives.at(findGroup(part, dfa.start().get())),
-                        representatives.at(findGroup(part, dfa.accepting().get()))};
+    return result;
   }
 };
 

@@ -11,12 +11,17 @@
 
 namespace au {
 
-class DfaState : public State<DfaState, std::shared_ptr<DfaState>> {
+class DfaState : public State<DfaState, char, DfaState*> {
+private:
+  using Base = State<DfaState, char, DfaState*>;
+  static inline std::unique_ptr<DfaState> _deadState = std::make_unique<DfaState>();
+
 public:
-  auto __addTransition(std::optional<char> sym, std::shared_ptr<DfaState> const& state) -> void {
-    if (sym == std::nullopt) {
-      throw exceptions::DfaEpsilonTransitionException {};
-    }
+  using Base::addTransition;
+
+  auto addTransition(std::optional<char>, DfaState*) -> void { throw exceptions::DfaEpsilonTransitionException {}; }
+
+  auto __addTransition(char sym, DfaState* state) -> void {
     if (_transitions.contains(sym)) {
       throw exceptions::DfaConflictingTransitionException {sym};
     }
@@ -26,12 +31,12 @@ public:
   auto __nextStates() const -> std::unordered_set<DfaState const*> {
     std::unordered_set<DfaState const*> result {};
     for (auto const& state : std::views::values(_transitions)) {
-      result.insert(state.get());
+      result.insert(state);
     }
     return result;
   }
 
-  static inline std::shared_ptr<DfaState> deadState = std::make_shared<DfaState>();
+  [[nodiscard]] static auto const& deadState() { return _deadState.get(); }
 };
 
 template <> struct DotNodePrinter<DfaState> {
@@ -49,13 +54,14 @@ template <> struct DotNodePrinter<DfaState> {
 };
 
 template <> struct DotEdgePrinter<DfaState> {
-  auto operator()(DfaState const* n1, DfaState const* n2) const -> std::string {
+  auto operator()(DfaState const* n1, DfaState const* n2) const -> std::vector<std::string> {
+    std::vector<std::string> result {};
     for (auto const& [sym, state] : n1->transitions()) {
-      if (state.get() == n2) {
-        return std::string(1, sym.value());
+      if (state == n2) {
+        result.emplace_back(std::string(1, sym));
       }
     }
-    return "";
+    return result;
   }
 };
 
@@ -63,15 +69,20 @@ template <> struct GraphNodeChildren<DfaState> {
   auto operator()(DfaState const* n) const {
     std::vector<char> sortedSymbols {};
     for (auto const key : std::views::keys(n->transitions())) {
-      sortedSymbols.push_back(key.value());
+      sortedSymbols.push_back(key);
     }
     std::ranges::sort(sortedSymbols);
 
-    std::vector<DfaState const*> nodes {};
+    std::unordered_set<DfaState const*> nodes {};
+    std::vector<DfaState const*> result {};
     for (auto const& sym : sortedSymbols) {
-      nodes.push_back(n->next(sym).get());
+      auto next = n->next(sym);
+      if (!nodes.contains(n->next(sym))) {
+        nodes.emplace(next);
+        result.emplace_back(next);
+      }
     }
-    return nodes;
+    return result;
   }
 };
 } // namespace au

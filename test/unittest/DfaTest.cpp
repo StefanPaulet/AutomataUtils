@@ -9,11 +9,10 @@
 
 namespace {
 using namespace au;
-using test::Edge;
 using namespace test::dfa;
 
 auto compare(DfaAutomata const& d1, DfaAutomata const& d2) {
-  using State = std::shared_ptr<DfaState>;
+  using State = DfaState*;
   std::unordered_map<State, State> stateEquivalence {};
 
   std::function<bool(State const&, State const&)> equivalent =
@@ -72,7 +71,7 @@ TEST(DfaTest, Simulation) {
   auto dfa = NfaToDfaParser {}.parse(NfaAutomata {regex});
 
   auto acceptedString = "aabbaabb";
-  auto rejectedString = "cdab";
+  auto rejectedString = "abbcdc";
   auto minimallyAcceptedStirng = "abb";
   auto partiallyMatchedString = "abbb";
   ASSERT_TRUE(std::get<0>(dfa.simulate(acceptedString)));

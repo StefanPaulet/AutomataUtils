@@ -11,18 +11,18 @@
 
 namespace {
 using namespace au;
-using test::Edge;
 using namespace test::nfa;
 
 auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
-  std::unordered_map<std::shared_ptr<NfaState>, std::shared_ptr<NfaState>> stateEquivalence {};
+  using State = NfaState*;
+  std::unordered_map<State, State> stateEquivalence {};
 
   class EquivalenceMaintainer {
   private:
     using Map = std::add_lvalue_reference_t<decltype(stateEquivalence)>;
   public:
     EquivalenceMaintainer(
-        Map map, std::shared_ptr<NfaState> const& fs, std::shared_ptr<NfaState> const& ss) :
+        Map map, State const& fs, State const& ss) :
         map {map}, firstState {fs}, secondState {ss} {
       map.try_emplace(firstState, secondState);
     }
@@ -33,12 +33,12 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
 
   private:
     Map map;
-    std::shared_ptr<NfaState> const& firstState;
-    std::shared_ptr<NfaState> const& secondState;
+    State const& firstState;
+    State const& secondState;
   };
 
-  std::function<bool(std::shared_ptr<NfaState> const&, std::shared_ptr<NfaState> const&)> equivalent =
-      [&stateEquivalence, &equivalent](std::shared_ptr<NfaState> const& s1, std::shared_ptr<NfaState> const& s2) {
+  std::function<bool(State const&, State const&)> equivalent =
+      [&stateEquivalence, &equivalent](State const& s1, State const& s2) {
     if (stateEquivalence.contains(s1)) {
       return stateEquivalence.at(s1) == s2;
     }
