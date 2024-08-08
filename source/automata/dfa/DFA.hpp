@@ -92,7 +92,9 @@ public:
       }
     }
 
-    dfa.accepting() = endStates.front();
+    for (auto const* state : endStates) {
+      dfa.markAccepting(state);
+    }
     return dfa;
   }
 };
@@ -207,15 +209,18 @@ public:
     std::unordered_map<StateSet, DfaState*, SetHasher> representatives {};
 
     auto startGroup = findGroup(part, dfa.start());
-    auto accGroup = findGroup(part, dfa.accepting());
+    std::unordered_set<StateSet, SetHasher> accGroups {};
+    for (auto const* acc : dfa.accepting()) {
+      accGroups.emplace(findGroup(part, acc));
+    }
 
     for (auto const& group : part) {
       if (group == startGroup) {
         representatives.emplace(group, result.start());
         continue;
       }
-      if (group == accGroup) {
-        representatives.emplace(group, result.accepting());
+      if (accGroups.contains(group)) {
+        representatives.emplace(group, result.createAccepting());
         continue;
       }
       representatives.emplace(group, result.allocate());

@@ -68,7 +68,7 @@ class RegexToNfaParser {
 private:
   static auto character(char c) -> NfaAutomata {
     NfaAutomata res {};
-    res._start->addTransition(c, res._accepting);
+    res._start->addTransition(c, res.createAccepting());
     return res;
   }
 
@@ -79,7 +79,7 @@ private:
     res._accepting = lhs._accepting;
     for (auto const& [sym, states] : rhs._start->transitions()) {
       for (auto const& state : states) {
-        res._accepting->addTransition(sym, state);
+        res._accepting.front()->addTransition(sym, state);
       }
     }
     res._accepting = rhs._accepting;
@@ -91,9 +91,10 @@ private:
 
   static auto disjunction(NfaAutomata&& lhs, NfaAutomata&& rhs) -> NfaAutomata {
     NfaAutomata res;
+    auto resAccepting = res.createAccepting();
 
-    lhs._accepting->addTransition(std::nullopt, res._accepting);
-    rhs._accepting->addTransition(std::nullopt, res._accepting);
+    lhs._accepting.front()->addTransition(std::nullopt, resAccepting);
+    rhs._accepting.front()->addTransition(std::nullopt, resAccepting);
 
     res._start->addTransition(std::nullopt, lhs._start);
     res._start->addTransition(std::nullopt, rhs._start);
@@ -105,11 +106,12 @@ private:
 
   static auto kleeneClosure(NfaAutomata&& automata) -> NfaAutomata {
     NfaAutomata res;
+    auto resAccepting = res.createAccepting();
 
     res._start->addTransition(std::nullopt, automata._start);
-    res._start->addTransition(std::nullopt, res._accepting);
-    automata._accepting->addTransition(std::nullopt, automata._start);
-    automata._accepting->addTransition(std::nullopt, res._accepting);
+    res._start->addTransition(std::nullopt, resAccepting);
+    automata._accepting.front()->addTransition(std::nullopt, automata._start);
+    automata._accepting.front()->addTransition(std::nullopt, resAccepting);
 
     res.takeOwnership(std::move(automata));
     return res;

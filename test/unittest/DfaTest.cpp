@@ -48,6 +48,31 @@ TEST(DfaTest, Loop) {
   ASSERT_TRUE(compare(test1, test2));
 }
 
+TEST(DfaTest, MultipleExits) {
+  auto test = testMachine(4, {1, 2}, {
+    Edge {0, 1, 'a'},
+    Edge {0, 2, 'b'},
+    Edge {0, 3, 'c'}
+  });
+  ASSERT_TRUE(test.isAccepting(test.start()->next('a')));
+  ASSERT_TRUE(test.isAccepting(test.start()->next('b')));
+  ASSERT_FALSE(test.isAccepting(test.start()->next('c')));
+}
+
+TEST(DfaTest, MultipleExitsException) {
+  auto test = testMachine(4, {1, 2}, {
+    Edge {0, 1, 'a'},
+    Edge {0, 2, 'b'},
+    Edge {0, 3, 'c'}
+  });
+  auto nonOwnedNode = std::make_unique<DfaState>();
+  try {
+    test.markAccepting(nonOwnedNode.get());
+  } catch (exceptions::UnownedAcceptingStateException const& e) {
+    ASSERT_EQ(std::string {e.what()}, "Attemmpting to mark unowned state as accepting");
+  }
+}
+
 TEST(DfaTest, FromNfa) {
   auto nfa = NfaAutomata {Regex {"(a|b)*abb"}};
   auto dfa = NfaToDfaParser {}.parse(nfa);
@@ -77,6 +102,31 @@ TEST(DfaTest, Simulation) {
   ASSERT_TRUE(std::get<0>(dfa.simulate(acceptedString)));
   ASSERT_FALSE(std::get<0>(dfa.simulate(rejectedString)));
   ASSERT_TRUE(std::get<0>(dfa.simulate(minimallyAcceptedStirng)));
+  ASSERT_FALSE(std::get<0>(dfa.simulate(partiallyMatchedString)));
+}
+
+TEST(DfaTest, SimulationMultipleExits) {
+  auto dfa = testMachine(4, {2, 3}, {
+    Edge {0, 1, 'a'},
+    Edge {0, 1, 'b'},
+    Edge {1, 2, 'a'},
+    Edge {1, 3, 'b'},
+    Edge {2, 2, 'a'},
+    Edge {2, 3, 'b'},
+    Edge {3, 2, 'a'},
+    Edge {3, 3, 'b'}
+  });
+
+  auto acceptedString = "aabbaabb";
+  auto rejectedString = "abbcdc";
+  auto minimallyAcceptedString = "aa";
+  auto minimallyAcceptedString2 = "ab";
+  auto partiallyMatchedString = "abbbc";
+  ASSERT_TRUE(std::get<0>(dfa.simulate(acceptedString)));
+  ASSERT_FALSE(std::get<0>(dfa.simulate(rejectedString)));
+  ASSERT_TRUE(std::get<0>(dfa.simulate(minimallyAcceptedString)));
+  ASSERT_TRUE(std::get<0>(dfa.simulate(minimallyAcceptedString2)));
+  ASSERT_NE(std::get<1>(dfa.simulate(minimallyAcceptedString)), std::get<1>(dfa.simulate(minimallyAcceptedString2)));
   ASSERT_FALSE(std::get<0>(dfa.simulate(partiallyMatchedString)));
 }
 

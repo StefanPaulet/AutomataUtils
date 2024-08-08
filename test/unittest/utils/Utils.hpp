@@ -17,7 +17,8 @@ struct Edge {
 };
 
 template <typename Automata, typename TransitionType>
-auto testMachine(unsigned int totalStates, std::vector<Edge<TransitionType>> const& edges) {
+auto testMachine(unsigned int totalStates, std::vector<unsigned int> const& acceptingStates,
+                 std::vector<Edge<TransitionType>> const& edges) {
 
   Automata automata {};
 
@@ -25,10 +26,13 @@ auto testMachine(unsigned int totalStates, std::vector<Edge<TransitionType>> con
   container.reserve(totalStates);
 
   container.emplace_back(automata.start());
-  for (auto idx = 1; idx < totalStates - 1; ++idx) {
+  for (auto idx = 1; idx < totalStates; ++idx) {
     container.emplace_back(automata.allocate());
+
+    if (std::ranges::find(acceptingStates, idx) != acceptingStates.end()) {
+      automata.markAccepting(container.back());
+    }
   }
-  container.emplace_back(automata.accepting());
 
   for (auto const& edge : edges) {
     container[edge.startIdx]->addTransition(edge.symbol, container[edge.endIdx]);
@@ -39,15 +43,23 @@ auto testMachine(unsigned int totalStates, std::vector<Edge<TransitionType>> con
 
 namespace nfa {
 using Edge = Edge<std::optional<char>>;
+inline auto testMachine(unsigned int const totalStates, std::vector<unsigned int> const& acceptingStates,
+                        std::vector<Edge> const& edges) {
+  return testMachine<NfaAutomata>(totalStates, acceptingStates, edges);
+}
 inline auto testMachine(unsigned int const totalStates, std::vector<Edge> const& edges) {
-  return testMachine<NfaAutomata>(totalStates, edges);
+  return testMachine<NfaAutomata>(totalStates, {totalStates - 1}, edges);
 }
 } // namespace nfa
 
 namespace dfa {
 using Edge = Edge<char>;
+inline auto testMachine(unsigned int const totalStates, std::vector<unsigned int> const& acceptingStates,
+                        std::vector<Edge> const& edges) {
+  return testMachine<DfaAutomata>(totalStates, acceptingStates, edges);
+}
 inline auto testMachine(unsigned int const totalStates, std::vector<Edge> const& edges) {
-  return testMachine<DfaAutomata>(totalStates, edges);
+  return testMachine<DfaAutomata>(totalStates, {totalStates - 1}, edges);
 }
 }
 } // namespace au::test

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "Exceptions.hpp"
 #include <memory>
 #include <regex/Regex.hpp>
 #include <unordered_set>
@@ -12,27 +13,36 @@ namespace au {
 template <typename StateType> struct StateAllocator {
   StateAllocator() = default;
   StateAllocator(StateAllocator const&) = delete;
-  StateAllocator(StateAllocator&& other) noexcept { takeOwnership(std::move(other).container); }
+  StateAllocator(StateAllocator&& other) noexcept { takeOwnership(std::move(other)._stateContainer); }
   explicit StateAllocator(std::vector<std::unique_ptr<StateType>>&& source) { takeOwnership(std::move(source)); }
 
   auto takeOwnership(std::vector<std::unique_ptr<StateType>>&& other) {
     for (auto&& node : other) {
-      container.emplace_back(std::move(node));
+      _stateContainer.emplace_back(std::move(node));
     }
   }
-  auto takeOwnership(StateAllocator&& other) { takeOwnership(std::move(other).container); }
+  auto takeOwnership(StateAllocator&& other) { takeOwnership(std::move(other)._stateContainer); }
 
   auto operator()() {
-    container.emplace_back(std::make_unique<StateType>());
-    return container.back().get();
+    _stateContainer.emplace_back(std::make_unique<StateType>());
+    return _stateContainer.back().get();
   }
   auto operator()(StateType const* ptr) {
-    container.emplace_back(std::make_unique<StateType>(ptr));
-    return container.back().get();
+    _stateContainer.emplace_back(std::make_unique<StateType>(ptr));
+    return _stateContainer.back().get();
   }
 
-private:
-  std::vector<std::unique_ptr<StateType>> container {};
+  auto isOwner(StateType const* state) {
+    for (auto const& ownedState : _stateContainer) {
+      if (ownedState.get() == state) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+public:
+  std::vector<std::unique_ptr<StateType>> _stateContainer {};
 };
 
 template <typename D, typename ST> class Automata : public StateAllocator<ST> {
@@ -67,7 +77,9 @@ public:
 
   auto next(StateType const* state, std::optional<char> sym) const { return state->next(sym); }
 
-  auto isAccepting(StateType const* state) const -> bool { return state == _accepting; }
+  auto isAccepting(StateType const* state) const -> bool {
+    return std::ranges::find(_accepting, state) != _accepting.end();
+  }
 
   template <typename Range, std::enable_if_t<!std::is_pointer_v<std::remove_cvref_t<Range>>, int> = 0>
   auto isAccepting(Range&& states) const -> std::tuple<bool, StateType const*> {
@@ -97,9 +109,28 @@ public:
 
   auto size() const { return states().size(); }
 
+  auto markAccepting(StateType const* state) noexcept(false) {
+    if (std::ranges::find(_accepting, state) != _accepting.end()) {
+      return;
+    }
+
+    if (Allocator::isOwner(state)) {
+      _accepting.emplace_back(const_cast<StateType*>(state));
+      return;
+    }
+
+    throw exceptions::UnownedAcceptingStateException {};
+  }
+
+  auto createAccepting() noexcept {
+    auto newAccepting = allocate();
+    _accepting.push_back(newAccepting);
+    return newAccepting;
+  }
+
 protected:
   StateType* _start {allocate()};
-  StateType* _accepting {allocate()};
+  std::vector<StateType*> _accepting {};
 };
 
 

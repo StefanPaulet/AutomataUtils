@@ -71,12 +71,23 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
 
 TEST(NfaTest, LoopComparison) {
   auto test1 = testMachine(2, {
-  Edge{0, 1, std::nullopt},
-  Edge{1, 0, std::nullopt}});
+  Edge {0, 1, std::nullopt},
+  Edge {1, 0, std::nullopt}});
   auto test2 = testMachine(2, {
-  Edge{0, 1, std::nullopt},
-  Edge{1, 0, std::nullopt}});
+  Edge {0, 1, std::nullopt},
+  Edge {1, 0, std::nullopt}});
   ASSERT_TRUE(compare(test1, test2));
+}
+
+TEST(NfaTest, MultipleExits) {
+  auto test = testMachine(4, {1, 2}, {
+    Edge {0, 1, 'a'},
+    Edge {0, 2, 'b'},
+    Edge {0, 3, 'c'}
+  });
+  ASSERT_TRUE(std::get<0>(test.isAccepting(test.start()->next('a'))));
+  ASSERT_TRUE(std::get<0>(test.isAccepting(test.start()->next('b'))));
+  ASSERT_FALSE(std::get<0>(test.isAccepting(test.start()->next('c'))));
 }
 
 TEST(NfaTest, FromRegex) {
