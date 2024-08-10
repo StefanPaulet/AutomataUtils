@@ -42,8 +42,160 @@ public:
 };
 
 class RegexToDfaParser {
+private:
+  struct RegexTreeDfaParsingEnhancer {
+    auto operator()(RegexSyntaxTree&& initialTree) const -> RegexSyntaxTree {
+      constexpr auto endMarker = '#';
+      auto endMarkerNode = std::make_unique<RegexSyntaxTreeNode>(endMarker);
+      auto newRoot = std::make_unique<RegexSyntaxTreeNode>(operators::catOp.op, std::move(initialTree.root()),
+                                                           std::move(endMarkerNode));
+      return RegexSyntaxTree {std::move(newRoot)};
+    }
+  };
+  using Node = RegexSyntaxTreeNode const*;
+
+  template <typename Target> using NodeMap = std::unordered_map<Node, Target>;
+
+  using NodePosMap = NodeMap<std::unordered_set<Node>>;
+  using NodeNullableMap = NodeMap<bool>;
+
+  struct PosContainer {
+    NodeNullableMap null {};
+    NodePosMap first {};
+    NodePosMap last {};
+    NodePosMap follow {};
+  };
+
+  auto character(PosContainer& pos, Node node) const {
+    pos.null.emplace(node, false);
+    pos.first[node].emplace(node);
+    pos.last[node].emplace(node);
+  }
+
+  auto composition(PosContainer& pos, Node node, Node lhs, Node rhs) const {
+    pos.null.emplace(node, pos.null.at(lhs) && pos.null.at(rhs));
+
+    auto&& [fpNode, _1] = pos.first.emplace(node, pos.first.at(lhs));
+    auto const& rhsFp = pos.first.at(rhs);
+    if (pos.null.at(lhs)) {
+      fpNode->second.insert(rhsFp.begin(), rhsFp.end());
+    }
+
+    auto&& [lpNode, _2] = pos.last.emplace(node, pos.last.at(rhs));
+    if (pos.null.at(rhs)) {
+      auto const& lhsLp = pos.last.at(lhs);
+      lpNode->second.insert(lhsLp.begin(), lhsLp.end());
+    }
+
+    for (auto const* lhsLast : pos.last.at(lhs)) {
+      pos.follow[lhsLast].insert(rhsFp.begin(), rhsFp.end());
+    }
+  }
+
+  auto disjunction(PosContainer& pos, Node node, Node lhs, Node rhs) const {
+    pos.null.emplace(node, pos.null.at(lhs) || pos.null.at(rhs));
+
+    auto const& rhsFp = pos.first.at(rhs);
+    pos.first.emplace(node, pos.first.at(lhs)).first->second.insert(rhsFp.begin(), rhsFp.end());
+
+    auto const& lhsLp = pos.last.at(lhs);
+    pos.last.emplace(node, pos.last.at(rhs)).first->second.insert(lhsLp.begin(), lhsLp.end());
+  }
+
+  auto kleeneClosure(PosContainer& pos, Node node, Node child) const {
+    pos.null.emplace(node, true);
+    pos.first.emplace(node, pos.first.at(child));
+    pos.last.emplace(node, pos.last.at(child));
+
+    auto const& childFp = pos.first.at(child);
+    for (auto const* childLp : pos.last.at(child)) {
+      pos.follow[childLp].insert(childFp.begin(), childFp.end());
+    }
+  }
+
+  auto fillPos(PosContainer& pos, Regex const& regex) const -> RegexSyntaxTree::Node {
+    std::stack<RegexSyntaxTreeNode const*> nodeStack {};
+    auto getNextNode = [&nodeStack]() -> RegexSyntaxTreeNode const* {
+      auto const* next = nodeStack.top();
+      nodeStack.pop();
+      return next;
+    };
+
+    auto operatorSwitch = [this, &getNextNode, &pos](Node node, Operator const& op) {
+      using namespace operators;
+      if (op == starOp) {
+        kleeneClosure(pos, node, getNextNode());
+        return;
+      }
+      auto rhs = getNextNode();
+      auto lhs = getNextNode();
+      if (op == catOp) {
+        composition(pos, node, lhs, rhs);
+        return;
+      }
+      if (op == orOp) {
+        disjunction(pos, node, lhs, rhs);
+        return;
+      }
+
+      assert(false && "Unknown operator found");
+    };
+
+    using enum RegexSyntaxTreeTraversal::Order;
+    auto tree = RegexTreeDfaParsingEnhancer {}(regex.parse());
+    for (auto const* node : RegexSyntaxTreeTraversal {POSTORDER, tree.root().get()}) {
+      if (auto [isOp, op] = regex.operators().isOperator(node->_character); isOp) {
+        operatorSwitch(node, op);
+      } else {
+        character(pos, node);
+      }
+      nodeStack.push(node);
+    }
+
+    return std::move(tree.root());
+  }
+
 public:
-  auto parse(Regex const& regex) { assert(false && "Regex to dfa parsing not implemented yet"); }
+  auto parse(Regex const& regex) const {
+    PosContainer pos {};
+    auto root = fillPos(pos, regex);
+    auto const* endMarkerNode = root->_pRight.get();
+
+    DfaAutomata dfa {};
+    auto const& start = pos.first.at(root.get());
+    std::unordered_map<std::unordered_set<Node>, DfaState*, SetHasher> stateMap {};
+    std::queue<std::unordered_set<Node>> groupQueue {};
+
+    stateMap.emplace(start, dfa._start);
+    groupQueue.push(start);
+
+    while (!groupQueue.empty()) {
+      auto currState = groupQueue.front();
+      groupQueue.pop();
+
+      std::unordered_map<char, std::unordered_set<Node>> nextStatesSet {};
+      for (auto const* node : currState) {
+        if (node != endMarkerNode) {
+          auto nextState = pos.follow.at(node);
+          nextStatesSet[node->_character].insert(nextState.begin(), nextState.end());
+        }
+      }
+
+      for (auto const& [sym, group] : nextStatesSet) {
+        if (!stateMap.contains(group)) {
+          stateMap.emplace(group, dfa.allocate());
+          groupQueue.push(group);
+        }
+        auto newState = stateMap.at(group);
+        stateMap.at(currState)->addTransition(sym, newState);
+        if (group.contains(endMarkerNode)) {
+          dfa.markAccepting(newState);
+        }
+      }
+    }
+
+    return dfa;
+  }
 };
 
 class NfaToDfaParser {

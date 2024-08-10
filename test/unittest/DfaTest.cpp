@@ -179,3 +179,41 @@ TEST(DfaTest, Minimization2) {
 
   ASSERT_TRUE(compare(minimalDfa, target));
 }
+
+TEST(DfaTest, FromRegex) {
+  auto regex = Regex {"(a|b)*abb"};
+  auto dfa = DfaAutomata {regex};
+  auto target = testMachine(4, {3}, {
+    Edge {0, 1, 'a'},
+    Edge {0, 0, 'b'},
+
+    Edge {1, 1, 'a'},
+    Edge {1, 2, 'b'},
+
+    Edge {2, 1, 'a'},
+    Edge {2, 3, 'b'},
+
+    Edge {3, 1, 'a'},
+    Edge {3, 0, 'b'},
+  });
+
+  DotGraphPrinter dg {true, "dfa graph"};
+  auto o = std::ofstream("out.out");
+  dg.dump(o, dfa.start());
+
+  ASSERT_TRUE(compare(dfa, target));
+}
+
+TEST(DfaTest, FromRegexSimulation) {
+  auto regex = Regex {"(a|b)*abb"};
+  auto dfa = DfaAutomata {regex};
+
+  auto acceptedString = "aabbaabb";
+  auto rejectedString = "abbcdc";
+  auto minimallyAcceptedStirng = "abb";
+  auto partiallyMatchedString = "abbb";
+  ASSERT_TRUE(std::get<0>(dfa.simulate(acceptedString)));
+  ASSERT_FALSE(std::get<0>(dfa.simulate(rejectedString)));
+  ASSERT_TRUE(std::get<0>(dfa.simulate(minimallyAcceptedStirng)));
+  ASSERT_FALSE(std::get<0>(dfa.simulate(partiallyMatchedString)));
+}
