@@ -7,7 +7,7 @@
   - [x] NFA representation
   - [x] DFA representation
   - [x] Regex to NFA
-  - [ ] Regex to DFA (directly with followpos)
+  - [x] Regex to DFA (directly with followpos)
   - [ ] KMP and AhoCorasick
   - [x] NFA to DFA
   - [x] DFA minimization 
