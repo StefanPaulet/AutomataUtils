@@ -15,12 +15,14 @@ endif()
 
 add_executable(unittests unitTest.cpp
     AlphabetTest.cpp
-    OperatorTest.cpp
-    RegexTest.cpp
-    PrinterTest.cpp
+    DfaTest.cpp
+    FallbackMachineTest.cpp
+    KMPTest.cpp
     NfaTest.cpp
-    StateTest.cpp
-    DfaTest.cpp)
+    OperatorTest.cpp
+    PrinterTest.cpp
+    RegexTest.cpp
+    StateTest.cpp)
 target_link_libraries(unittests lib.gtest)
 target_include_directories(unittests PRIVATE ../../source)
 

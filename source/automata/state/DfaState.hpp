@@ -36,7 +36,7 @@ public:
     return result;
   }
 
-  [[nodiscard]] static auto const& deadState() { return _deadState.get(); }
+  [[nodiscard]] static auto deadState() -> DfaState* { return _deadState.get(); }
 };
 
 template <> struct DotNodePrinter<DfaState> {

@@ -23,6 +23,7 @@ private:
 
 public:
   using Automata::Automata;
+  using Automata::objects;
   using RegexParser = RegexToDfaParser;
 
   auto __simulate(std::string_view const str) const -> std::tuple<bool, DfaState const*> {

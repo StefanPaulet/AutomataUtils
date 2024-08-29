@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <utils/Printer.hpp>
 #include <vector>
-
 namespace au {
 
 template <typename D, typename TransitionType, typename StateContainerType> class State {

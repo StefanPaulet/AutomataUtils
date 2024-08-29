@@ -4,15 +4,9 @@
 #include <automata/dfa/DFA.hpp>
 #include <automata/nfa/NFA.hpp>
 #include <fstream>
+#include <stringMatching/KMP.hpp>
+#include <stringMatching/fallback/KmpFallbackMachine.hpp>
 
 using namespace au;
 
-int main() {
-
-  auto r = Regex {"(a|b)*abb"};
-  auto nfa = NfaAutomata {r};
-  DotGraphPrinter dg {true, "nfa"};
-  std::ofstream out {"out.out"};
-  dg.dump(out, nfa.start().get());
-  return 0;
-}
+int main() { return 0; }

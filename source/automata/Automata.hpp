@@ -41,6 +41,8 @@ template <typename StateType> struct StateAllocator {
     return false;
   }
 
+  auto const& objects() const { return _stateContainer; }
+
 public:
   std::vector<std::unique_ptr<StateType>> _stateContainer {};
 };
@@ -50,6 +52,7 @@ public:
   using StateType = ST;
   using Allocator = StateAllocator<StateType>;
   using Allocator::Allocator;
+  using Allocator::objects;
 
   Automata() = default;
   Automata(Automata const&) = default;
