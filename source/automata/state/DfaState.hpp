@@ -14,29 +14,28 @@ namespace au {
 class DfaState : public State<DfaState, char, DfaState*> {
 private:
   using Base = State<DfaState, char, DfaState*>;
-  static inline std::unique_ptr<DfaState> _deadState = std::make_unique<DfaState>();
+  friend class State<DfaState, char, DfaState*>;
 
 public:
   using Base::addTransition;
 
   auto addTransition(std::optional<char>, DfaState*) -> void { throw exceptions::DfaEpsilonTransitionException {}; }
 
-  auto __addTransition(char sym, DfaState* state) -> void {
+private:
+  auto addTransitionImpl(char sym, DfaState* state) -> void {
     if (_transitions.contains(sym)) {
       throw exceptions::DfaConflictingTransitionException {sym};
     }
     _transitions.emplace(sym, state);
   }
 
-  auto __nextStates() const -> std::unordered_set<DfaState const*> {
+  auto nextStatesImpl() const -> std::unordered_set<DfaState const*> {
     std::unordered_set<DfaState const*> result {};
     for (auto const& state : std::views::values(_transitions)) {
       result.insert(state);
     }
     return result;
   }
-
-  [[nodiscard]] static auto const& deadState() { return _deadState.get(); }
 };
 
 template <> struct DotNodePrinter<DfaState> {
@@ -47,7 +46,7 @@ template <> struct DotNodePrinter<DfaState> {
     return std::to_string(_ids.emplace(n, _idInc++).first->second);
   }
 
-  auto colour(DfaState const* n) const { return "black"; }
+  auto colour([[maybe_unused]] DfaState const* _) const { return "black"; }
 
   unsigned int _idInc {};
   std::unordered_map<DfaState const*, unsigned> _ids {};
@@ -76,8 +75,8 @@ template <> struct GraphNodeChildren<DfaState> {
     std::unordered_set<DfaState const*> nodes {};
     std::vector<DfaState const*> result {};
     for (auto const& sym : sortedSymbols) {
-      auto next = n->next(sym);
-      if (!nodes.contains(n->next(sym))) {
+      auto next {n->next(sym)};
+      if (!nodes.contains(static_cast<DfaState const*>(n->next(sym)))) {
         nodes.emplace(next);
         result.emplace_back(next);
       }

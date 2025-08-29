@@ -4,7 +4,7 @@
 
 
 #include "operator/Operator.hpp"
-#include "gtest/gtest.h"
+#include "utils/Utils.hpp"
 
 namespace {
 using namespace au;

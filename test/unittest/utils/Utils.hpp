@@ -7,6 +7,14 @@
 #include <automata/dfa/DFA.hpp>
 #include <automata/nfa/NFA.hpp>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wextra"
+#pragma GCC diagnostic ignored "-Wconversion"
+#include <gtest/gtest.h>
+#pragma GCC diagnostic pop
+
+
 namespace au::test {
 
 template <typename TransitionType>

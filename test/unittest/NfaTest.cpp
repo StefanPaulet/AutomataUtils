@@ -4,7 +4,6 @@
 
 
 #include <automata/nfa/NFA.hpp>
-#include <gtest/gtest.h>
 #include <ranges>
 #include <fstream>
 #include "utils/Utils.hpp"

@@ -314,7 +314,7 @@ private:
       for (auto const* state : set) {
         auto nextState = state->next(sym);
         StateSet targetSet;
-        if (nextState != DfaState::deadState()) {
+        if (!nextState.isDead()) {
           targetSet = findGroup(currentPartition, nextState);
         } else {
           continue;

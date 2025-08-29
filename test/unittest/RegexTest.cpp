@@ -5,8 +5,8 @@
 
 #include "regex/Regex.cpp"
 #include "regex/Regex.hpp"
-#include "gtest/gtest.h"
 #include "operator/Operator.hpp"
+#include "utils/Utils.hpp"
 
 namespace {
 using namespace au;
@@ -33,7 +33,7 @@ auto node(Operator const& op, char left, char right) -> std::unique_ptr<Node> {
 auto tree(std::unique_ptr<Node>&& root) { return RegexSyntaxTree {std::move(root)}; }
 
 auto testOrFailureDump(Regex const& r, RegexSyntaxTree&& expected) {
-  auto actual = std::move(r.parse());
+  auto actual = r.parse();
   auto equals = (actual == expected);
   if (!equals) {
     TreeGraphPrinter t;
@@ -256,6 +256,10 @@ TEST(RegexTest, Traversals) {
 
   RegexSyntaxTreeTraversal postOrder {POSTORDER, r.parse().root().get()};
   auto postOrderExpected = std::array<char, 3> {'a', 'b', '|'};
+
+  compare({inOrder.begin(), inOrder.end()}, inOrderExpected);
+  compare({preOrder.begin(), preOrder.end()}, preOrderExpected);
+  compare({postOrder.begin(), postOrder.end()}, postOrderExpected);
 }
 
 TEST(RegexTest, Exception1) {

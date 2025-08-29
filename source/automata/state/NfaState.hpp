@@ -15,9 +15,9 @@ private:
 public:
   using StateType = NfaState*;
 
-  auto __addTransition(std::optional<char> sym, NfaState* state) -> void { _transitions[sym].push_back(state); }
+  auto addTransition(std::optional<char> sym, NfaState* state) -> void { _transitions[sym].push_back(state); }
 
-  auto __nextStates() const -> std::unordered_set<NfaState const*> {
+  auto nextStates() const -> std::unordered_set<NfaState const*> {
     std::unordered_set<NfaState const*> result {};
     for (auto const& next : std::views::values(_transitions)) {
       for (auto const& state : next) {
@@ -25,11 +25,6 @@ public:
       }
     }
     return result;
-  }
-
-  [[nodiscard]] static auto deadState() -> std::vector<NfaState*>& {
-    static std::vector<NfaState*> ds {};
-    return ds;
   }
 };
 
@@ -41,7 +36,7 @@ template <> struct DotNodePrinter<NfaState> {
     return std::to_string(_ids.emplace(n, _idInc++).first->second);
   }
 
-  auto colour(NfaState const* n) const { return "black"; }
+  auto colour([[maybe_unused]] NfaState const*) const { return "black"; }
 
   unsigned int _idInc {};
   std::unordered_map<NfaState const*, unsigned> _ids {};

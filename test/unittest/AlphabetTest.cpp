@@ -4,7 +4,7 @@
 
 #include "alphabet/Alphabet.cpp"
 #include "alphabet/Alphabet.hpp"
-#include "gtest/gtest.h"
+#include "utils/Utils.hpp"
 
 namespace {
 using namespace au;

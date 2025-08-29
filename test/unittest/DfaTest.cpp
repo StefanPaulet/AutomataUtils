@@ -2,7 +2,6 @@
 // Created by stefan on 8/3/24.
 //
 
-#include <gtest/gtest.h>
 #include <automata/dfa/DFA.hpp>
 #include "utils/Utils.hpp"
 #include <fstream>

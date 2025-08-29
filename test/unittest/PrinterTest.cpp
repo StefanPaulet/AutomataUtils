@@ -5,7 +5,6 @@
 #include "regex/Regex.hpp"
 #include "regex/RegexSyntaxTree.hpp"
 #include "utils/Utils.hpp"
-#include "gtest/gtest.h"
 #include <fstream>
 #include <automata/dfa/DFA.hpp>
 #include <automata/nfa/NFA.hpp>

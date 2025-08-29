@@ -41,7 +41,7 @@ private:
     while (!newStates.empty()) {
       auto const* currentState = newStates.front();
       newStates.pop();
-      for (auto&& nextState : currentState->next(std::nullopt)) {
+      for (auto nextState : currentState->next(std::nullopt)) {
         if (!closureStates.contains(nextState)) {
           closureStates.insert(nextState);
           newStates.push(nextState);

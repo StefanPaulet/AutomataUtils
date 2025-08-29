@@ -117,7 +117,7 @@ auto Regex::augment() -> void {
       }
       return condition;
     }
-    return (current == '(') && (prevInAlphabet || isPrevOp && prevOp.unary);
+    return (current == '(') && (prevInAlphabet || (isPrevOp && prevOp.unary));
   };
   result.push_back(_str[0]);
   for (auto idx = 1; idx < _str.size(); ++idx) {

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <format>
 #include <ostream>
 #include <queue>

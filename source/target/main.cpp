@@ -13,6 +13,6 @@ int main() {
   auto nfa = NfaAutomata {r};
   DotGraphPrinter dg {true, "nfa"};
   std::ofstream out {"out.out"};
-  dg.dump(out, nfa.start().get());
+  dg.dump(out, nfa.start());
   return 0;
 }

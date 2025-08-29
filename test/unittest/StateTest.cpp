@@ -5,7 +5,7 @@
 #include <automata/state/DfaState.hpp>
 #include <automata/state/State.hpp>
 #include <automata/state/NfaState.hpp>
-#include <gtest/gtest.h>
+#include "utils/Utils.hpp"
 
 namespace {
 using namespace au;
@@ -22,14 +22,13 @@ TEST(NfaStateTest, Transitions) {
   s2->addTransition(std::nullopt, s4.get());
   s3->addTransition(std::nullopt, s4.get());
 
-  ASSERT_EQ(s1->next('a').front(), s2.get());
+  ASSERT_EQ(*s1->next('a').begin(), s2.get());
   {
     auto it = s1->next('a').begin();
-    ++it;
-    ASSERT_EQ(*it, s3.get());
+    ASSERT_EQ(*(++it), s3.get());
   }
-  ASSERT_EQ(s2->next(std::nullopt).front(), s4.get());
-  ASSERT_EQ(s3->next(std::nullopt).front(), s4.get());
+  ASSERT_EQ(*s2->next(std::nullopt).begin(), s4.get());
+  ASSERT_EQ(*s3->next(std::nullopt).begin(), s4.get());
 }
 
 TEST(DfaStateTest, Transitions) {
@@ -40,9 +39,9 @@ TEST(DfaStateTest, Transitions) {
   s1->addTransition('a', s2.get());
   s1->addTransition('b', s3.get());
   s2->addTransition('c', s3.get());
-  ASSERT_EQ(s1->next('a'), s2.get());
-  ASSERT_EQ(s1->next('b'), s3.get());
-  ASSERT_EQ(s2->next('c'), s1->next('b'));
+  ASSERT_EQ(static_cast<DfaState const*>(s2.get()), s1->next('a'));
+  ASSERT_EQ(static_cast<DfaState const*>(s3.get()), s1->next('b'));
+  ASSERT_EQ(static_cast<DfaState const*>(s1->next('b')), s2->next('c'));
 }
 
 TEST(DfaStateTest, MultipleTransitionsException) {
