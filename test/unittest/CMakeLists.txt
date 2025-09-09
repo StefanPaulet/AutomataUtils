@@ -9,8 +9,8 @@ if(NOT googletest_POPULATED)
     add_library(lib.gtest
             ${googletest_SOURCE_DIR}/googletest/src/gtest-all.cc)
     target_include_directories(lib.gtest
-            PUBLIC ${googletest_SOURCE_DIR}/googletest/include/
-            PRIVATE ${googletest_SOURCE_DIR}/googletest)
+            SYSTEM PUBLIC ${googletest_SOURCE_DIR}/googletest/include/
+            SYSTEM PRIVATE ${googletest_SOURCE_DIR}/googletest)
 endif()
 
 add_executable(unittests unitTest.cpp

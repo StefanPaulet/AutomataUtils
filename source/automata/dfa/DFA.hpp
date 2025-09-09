@@ -28,7 +28,11 @@ public:
   auto __simulate(std::string_view const str) const -> std::tuple<bool, DfaState const*> {
     auto* currentState = start();
     for (auto chr : str) {
-      currentState = currentState->next(chr);
+      if (auto nextState = currentState->next(chr); !nextState.isDead()) {
+        currentState = nextState;
+      } else {
+        return {false, nullptr};
+      }
     }
     if (isAccepting(currentState)) {
       return {true, currentState};

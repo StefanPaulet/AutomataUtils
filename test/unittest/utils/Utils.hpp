@@ -7,12 +7,7 @@
 #include <automata/dfa/DFA.hpp>
 #include <automata/nfa/NFA.hpp>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wall"
-#pragma GCC diagnostic ignored "-Wextra"
-#pragma GCC diagnostic ignored "-Wconversion"
 #include <gtest/gtest.h>
-#pragma GCC diagnostic pop
 
 
 namespace au::test {
@@ -69,5 +64,10 @@ inline auto testMachine(unsigned int const totalStates, std::vector<unsigned int
 inline auto testMachine(unsigned int const totalStates, std::vector<Edge> const& edges) {
   return testMachine<DfaAutomata>(totalStates, {totalStates - 1}, edges);
 }
+} // namespace dfa
+
+template <typename Lhs, typename Rhs>
+auto compareNext(Lhs const* lhs, Rhs rhs) {
+  ASSERT_EQ(lhs, static_cast<Lhs const*>(rhs));
 }
 } // namespace au::test

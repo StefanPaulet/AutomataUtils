@@ -39,9 +39,9 @@ TEST(DfaStateTest, Transitions) {
   s1->addTransition('a', s2.get());
   s1->addTransition('b', s3.get());
   s2->addTransition('c', s3.get());
-  ASSERT_EQ(static_cast<DfaState const*>(s2.get()), s1->next('a'));
-  ASSERT_EQ(static_cast<DfaState const*>(s3.get()), s1->next('b'));
-  ASSERT_EQ(static_cast<DfaState const*>(s1->next('b')), s2->next('c'));
+  test::compareNext(s2.get(), s1->next('a'));
+  test::compareNext(s3.get(), s1->next('b'));
+  test::compareNext(s3.get(), s2->next('c'));
 }
 
 TEST(DfaStateTest, MultipleTransitionsException) {

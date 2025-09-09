@@ -129,13 +129,13 @@ public:
   [[nodiscard]] auto begin() const { return _nodes.begin(); };
   [[nodiscard]] auto end() const { return _nodes.end(); };
 
-  RegexSyntaxTreeTraversal(Order order, RegexSyntaxTreeNode* node) {
+  RegexSyntaxTreeTraversal(Order order, RegexSyntaxTreeNode const* node) {
     if (node == nullptr) {
       return;
     }
 
-    auto traverse = [this, order](RegexSyntaxTreeNode* node) {
-      auto&& nodes = RegexSyntaxTreeTraversal {order, std::move(node)};
+    auto traverse = [this, order](RegexSyntaxTreeNode const* node) {
+      auto&& nodes = RegexSyntaxTreeTraversal {order, node};
       _nodes.insert(_nodes.end(), nodes.begin(), nodes.end());
     };
 
@@ -163,7 +163,7 @@ public:
   }
 
 private:
-  std::vector<RegexSyntaxTreeNode*> _nodes {};
+  std::vector<RegexSyntaxTreeNode const*> _nodes {};
 };
 
 } // namespace au

@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <optional>
 #include <type_traits>
 
 namespace au {
@@ -48,17 +49,13 @@ template <typename T> struct NextStateIterableWrapper {
   [[nodiscard]] auto begin(std::optional<NextStateWrapperContainer<T> const*> container) const {
     return container.transform([](NextStateWrapperContainer<T> const* container) {
       return Iterator{true, container};
-    }).or_else([] {
-      return Iterator{false, nullptr};
-    });
+    }).value_or(Iterator{false, nullptr});
   }
 
   [[nodiscard]] auto end(std::optional<NextStateWrapperContainer<T> const*> container) const {
     return container.transform([](NextStateWrapperContainer<T> const* container) {
       return Iterator{false, container};
-    }).or_else([] {
-      return Iterator{false, nullptr};
-    });
+    }).value_or(Iterator{false, nullptr});
   }
 };
 
@@ -147,6 +144,8 @@ public:
     }
     return IterableBase::end(&_container.value());
   }
+  [[nodiscard]] auto operator->() { return &_container->get(); }
+  [[nodiscard]] auto operator->() const { return &_container->get(); }
 
 private:
   std::optional<Container> _container;

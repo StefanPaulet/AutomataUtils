@@ -46,12 +46,12 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
       return false;
     }
     for (auto const& [sym, states1] : s1->transitions()) {
-      if (!s2->transitions().contains(sym) || s1->next(sym).size() != s2->next(sym).size()) {
+      if (!s2->transitions().contains(sym) || s1->next(sym)->size() != s2->next(sym)->size()) {
         return false;
       }
       for (auto& next1 : states1) {
         bool foundEquivalent = false;
-        for (auto& next2 : s2->next(sym)) {
+        for (auto* next2 : s2->next(sym)) {
           if (equivalent(next1, next2)) {
             foundEquivalent = true;
             break;

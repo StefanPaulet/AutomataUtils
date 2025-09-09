@@ -53,9 +53,9 @@ TEST(DfaTest, MultipleExits) {
     Edge {0, 2, 'b'},
     Edge {0, 3, 'c'}
   });
-  ASSERT_TRUE(test.isAccepting(test.start()->next('a')));
-  ASSERT_TRUE(test.isAccepting(test.start()->next('b')));
-  ASSERT_FALSE(test.isAccepting(test.start()->next('c')));
+  ASSERT_TRUE(std::get<bool>(test.isAccepting(test.start()->next('a'))));
+  ASSERT_TRUE(std::get<bool>(test.isAccepting(test.start()->next('b'))));
+  ASSERT_FALSE(std::get<bool>(test.isAccepting(test.start()->next('c'))));
 }
 
 TEST(DfaTest, MultipleExitsException) {

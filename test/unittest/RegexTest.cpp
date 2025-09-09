@@ -241,25 +241,28 @@ TEST(RegexTest, ParseExtra5) {
 TEST(RegexTest, Traversals) {
   Regex const r {"a|b"};
   using enum RegexSyntaxTreeTraversal::Order;
-  auto compare = [](std::vector<RegexSyntaxTreeNode*> real, std::array<char, 3> expected) {
+  auto compare = [](std::vector<RegexSyntaxTreeNode const*> real, std::array<char, 3> expected) {
     auto expIt = expected.begin();
+    ASSERT_EQ(real.size(), 3);
     for (auto const& node : real) {
       ASSERT_EQ(node->_character, *expIt++);
     }
   };
 
-  RegexSyntaxTreeTraversal inOrder {INORDER, r.parse().root().get()};
+  auto tree = r.parse();
+
+  RegexSyntaxTreeTraversal inOrder {INORDER, tree.root().get()};
   auto inOrderExpected = std::array<char, 3> {'a', '|', 'b'};
 
-  RegexSyntaxTreeTraversal preOrder {PREORDER, r.parse().root().get()};
-  auto preOrderExpected = std::array<char, 3> {'|', 'A', 'b'};
+  RegexSyntaxTreeTraversal preOrder {PREORDER, tree.root().get()};
+  auto preOrderExpected = std::array<char, 3> {'|', 'a', 'b'};
 
-  RegexSyntaxTreeTraversal postOrder {POSTORDER, r.parse().root().get()};
+  RegexSyntaxTreeTraversal postOrder {POSTORDER, tree.root().get()};
   auto postOrderExpected = std::array<char, 3> {'a', 'b', '|'};
 
-  compare({inOrder.begin(), inOrder.end()}, inOrderExpected);
-  compare({preOrder.begin(), preOrder.end()}, preOrderExpected);
-  compare({postOrder.begin(), postOrder.end()}, postOrderExpected);
+  compare(std::vector(inOrder.begin(), inOrder.end()), inOrderExpected);
+  compare(std::vector(preOrder.begin(), preOrder.end()), preOrderExpected);
+  compare(std::vector(postOrder.begin(), postOrder.end()), postOrderExpected);
 }
 
 TEST(RegexTest, Exception1) {
