@@ -10,12 +10,12 @@
 namespace au {
 
 
-class NfaState : public State<NfaState, std::optional<char>, std::vector<NfaState*>> {
+class NfaState : public State<NfaState, std::optional<char>, std::vector<NfaState const*>> {
 private:
 public:
   using StateType = NfaState*;
 
-  auto addTransition(std::optional<char> sym, NfaState* state) -> void { _transitions[sym].push_back(state); }
+  auto addTransition(std::optional<char> sym, NfaState const* state) -> void { _transitions[sym].push_back(state); }
 
   auto nextStates() const -> std::unordered_set<NfaState const*> {
     std::unordered_set<NfaState const*> result {};

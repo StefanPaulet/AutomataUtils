@@ -13,7 +13,7 @@ using namespace au;
 using namespace test::nfa;
 
 auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
-  using State = NfaState*;
+  using State = NfaState const*;
   std::unordered_map<State, State> stateEquivalence {};
 
   class EquivalenceMaintainer {
@@ -21,7 +21,7 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
     using Map = std::add_lvalue_reference_t<decltype(stateEquivalence)>;
   public:
     EquivalenceMaintainer(
-        Map map, State const& fs, State const& ss) :
+        Map map, State fs, State ss) :
         map {map}, firstState {fs}, secondState {ss} {
       map.try_emplace(firstState, secondState);
     }
@@ -32,12 +32,12 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
 
   private:
     Map map;
-    State const& firstState;
-    State const& secondState;
+    State firstState;
+    State secondState;
   };
 
-  std::function<bool(State const&, State const&)> equivalent =
-      [&stateEquivalence, &equivalent](State const& s1, State const& s2) {
+  std::function<bool(State, State)> equivalent =
+      [&stateEquivalence, &equivalent](State s1, State s2) {
     if (stateEquivalence.contains(s1)) {
       return stateEquivalence.at(s1) == s2;
     }

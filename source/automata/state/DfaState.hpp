@@ -11,10 +11,10 @@
 
 namespace au {
 
-class DfaState : public State<DfaState, char, DfaState*> {
+class DfaState : public State<DfaState, char, DfaState const*> {
 private:
-  using Base = State<DfaState, char, DfaState*>;
-  friend class State<DfaState, char, DfaState*>;
+  using Base = State;
+  friend class State;
 
 public:
   using Base::addTransition;
@@ -76,7 +76,7 @@ template <> struct GraphNodeChildren<DfaState> {
     std::vector<DfaState const*> result {};
     for (auto const& sym : sortedSymbols) {
       auto next {n->next(sym)};
-      if (!nodes.contains(static_cast<DfaState const*>(n->next(sym)))) {
+      if (!nodes.contains(n->next(sym))) {
         nodes.emplace(next);
         result.emplace_back(next);
       }

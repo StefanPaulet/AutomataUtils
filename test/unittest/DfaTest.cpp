@@ -11,11 +11,11 @@ using namespace au;
 using namespace test::dfa;
 
 auto compare(DfaAutomata const& d1, DfaAutomata const& d2) {
-  using State = DfaState*;
+  using State = DfaState const*;
   std::unordered_map<State, State> stateEquivalence {};
 
-  std::function<bool(State const&, State const&)> equivalent =
-    [&stateEquivalence, &equivalent](State const& s1, State const& s2) -> bool {
+  std::function<bool(State, State)> equivalent =
+    [&stateEquivalence, &equivalent](State s1, State s2) -> bool {
     if (stateEquivalence.contains(s1)) {
       return stateEquivalence.at(s1) == s2;
     }

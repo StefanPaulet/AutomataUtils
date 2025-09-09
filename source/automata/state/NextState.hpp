@@ -17,7 +17,7 @@ template <typename T> struct NextStateWrapperContainer {
   NextStateWrapperContainer(NextStateWrapperContainer&&) = default;
 
   explicit(false) NextStateWrapperContainer(T const& base) : _base{base} {}
-  [[nodiscard]] auto& get() const { return _base.get(); }
+  [[nodiscard]] auto const& get() const { return _base.get(); }
 
   std::reference_wrapper<T> _base;
 };
@@ -83,35 +83,14 @@ requires requires(T obj) {
   }
 };
 
-template <typename T> struct NextStateConvertibleWrapper {
-  [[nodiscard]] auto convert(NextStateWrapperContainer<T>& t) {
-    return t.get();
-  }
-  [[nodiscard]] auto convert(NextStateWrapperContainer<T> const& t) const {
-    return t.get();
-  }
-};
-
-template <typename T> requires std::is_pointer_v<T>
-struct NextStateConvertibleWrapper<T> {
-  [[nodiscard]] auto convert(NextStateWrapperContainer<T>& t) {
-    return t.get();
-  }
-  [[nodiscard]] auto convert(NextStateWrapperContainer<T> const& t) const {
-    return static_cast<std::add_pointer_t<std::add_const_t<std::remove_pointer_t<T>>> const>(t.get());
-  }
-};
-
 } // namespace detail
 
 template <typename BaseStateContainer> class NextStateWrapper :
-    private detail::NextStateIterableWrapper<BaseStateContainer>,
-    private detail::NextStateConvertibleWrapper<BaseStateContainer> {
+    private detail::NextStateIterableWrapper<BaseStateContainer> {
 private:
   using Container = detail::NextStateWrapperContainer<BaseStateContainer>;
 
   using IterableBase = detail::NextStateIterableWrapper<BaseStateContainer>;
-  using ConvertibleBase = detail::NextStateConvertibleWrapper<BaseStateContainer>;
 
 public:
   NextStateWrapper() : _container{std::nullopt} {}
@@ -119,16 +98,8 @@ public:
   NextStateWrapper(NextStateWrapper const&) = default;
   NextStateWrapper(NextStateWrapper&&) noexcept = default;
 
-  template <typename T>
-  requires std::is_convertible_v<BaseStateContainer, T>
-  [[nodiscard]] operator T() {
-    return ConvertibleBase::convert(_container.value());
-  }
-
-  template <typename T>
-  requires std::is_convertible_v<BaseStateContainer const, T>
-  [[nodiscard]] operator const Container() const {
-    return ConvertibleBase::convert(_container.value());
+  [[nodiscard]] operator BaseStateContainer() {
+    return _container->get();
   }
 
   [[nodiscard]] auto isDead() const { return !_container.has_value(); }

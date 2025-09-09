@@ -26,7 +26,7 @@ public:
   using RegexParser = RegexToDfaParser;
 
   auto __simulate(std::string_view const str) const -> std::tuple<bool, DfaState const*> {
-    auto* currentState = start();
+    auto const* currentState = start();
     for (auto chr : str) {
       if (auto nextState = currentState->next(chr); !nextState.isDead()) {
         currentState = nextState;
