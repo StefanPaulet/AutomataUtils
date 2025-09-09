@@ -13,7 +13,7 @@
 
 namespace au {
 
-template <typename Derived, typename TransitionType, typename NextStateContainerType>
+template <typename TransitionType, typename NextStateContainerType>
 class State {
 public:
   [[nodiscard]] auto next(TransitionType c) const -> NextStateWrapper<NextStateContainerType const> {
@@ -23,9 +23,13 @@ public:
     return {};
   }
 
-  auto addTransition(TransitionType sym, Derived* state) -> void { static_cast<Derived*>(this)->addTransitionImpl(sym, state); }
+  template <typename D>
+  auto addTransition(this D& self, TransitionType sym, D const* state) -> void { self.addTransitionImpl(sym, state); }
+
   [[nodiscard]] auto const& transitions() const { return _transitions; }
-  [[nodiscard]] auto nextStates() const { return static_cast<Derived const*>(this)->nextStatesImpl(); }
+
+  template <typename D>
+  [[nodiscard]] auto nextStates(this D const& self) { return self.nextStatesImpl(); }
 
 protected:
   std::unordered_map<TransitionType, NextStateContainerType> _transitions {};

@@ -11,7 +11,7 @@
 
 namespace au {
 
-class DfaState : public State<DfaState, char, DfaState const*> {
+class DfaState : public State<char, DfaState const*> {
 private:
   using Base = State;
   friend class State;
@@ -19,10 +19,10 @@ private:
 public:
   using Base::addTransition;
 
-  auto addTransition(std::optional<char>, DfaState*) -> void { throw exceptions::DfaEpsilonTransitionException {}; }
+  auto addTransition(std::optional<char>, DfaState const*) -> void { throw exceptions::DfaEpsilonTransitionException {}; }
 
 private:
-  auto addTransitionImpl(char sym, DfaState* state) -> void {
+  auto addTransitionImpl(char sym, DfaState const* state) -> void {
     if (_transitions.contains(sym)) {
       throw exceptions::DfaConflictingTransitionException {sym};
     }

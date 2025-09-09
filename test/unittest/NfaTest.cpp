@@ -36,8 +36,7 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
     State secondState;
   };
 
-  std::function<bool(State, State)> equivalent =
-      [&stateEquivalence, &equivalent](State s1, State s2) {
+  auto equivalent = [&stateEquivalence](this auto self, State s1, State s2) {
     if (stateEquivalence.contains(s1)) {
       return stateEquivalence.at(s1) == s2;
     }
@@ -52,7 +51,7 @@ auto compare(NfaAutomata const& n1, NfaAutomata const& n2) {
       for (auto& next1 : states1) {
         bool foundEquivalent = false;
         for (auto* next2 : s2->next(sym)) {
-          if (equivalent(next1, next2)) {
+          if (self(next1, next2)) {
             foundEquivalent = true;
             break;
           }

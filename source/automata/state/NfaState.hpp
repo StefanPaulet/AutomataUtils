@@ -10,7 +10,7 @@
 namespace au {
 
 
-class NfaState : public State<NfaState, std::optional<char>, std::vector<NfaState const*>> {
+class NfaState : public State<std::optional<char>, std::vector<NfaState const*>> {
 private:
 public:
   using StateType = NfaState*;

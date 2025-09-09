@@ -14,8 +14,7 @@ auto compare(DfaAutomata const& d1, DfaAutomata const& d2) {
   using State = DfaState const*;
   std::unordered_map<State, State> stateEquivalence {};
 
-  std::function<bool(State, State)> equivalent =
-    [&stateEquivalence, &equivalent](State s1, State s2) -> bool {
+  auto equivalent = [&stateEquivalence](this auto self, State s1, State s2) -> bool {
     if (stateEquivalence.contains(s1)) {
       return stateEquivalence.at(s1) == s2;
     }
@@ -25,7 +24,7 @@ auto compare(DfaAutomata const& d1, DfaAutomata const& d2) {
 
     stateEquivalence.try_emplace(s1, s2);
     for (auto const& [sym, next1] : s1->transitions()) {
-      if (!equivalent(next1, s2->next(sym))) {
+      if (!self(next1, s2->next(sym))) {
         stateEquivalence.erase(s1);
         return false;
       }
